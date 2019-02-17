@@ -5,11 +5,19 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-    String LOG_TAG = "first activity";
+    static final String LOG_TAG = "first activity";
     static final int RESULT_REQUEST_CODE = 908;
+
+    private View.OnClickListener buttonListener = new View.OnClickListener() {
+        public void onClick(View v) {
+            goToNextActivity();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,13 +25,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d(LOG_TAG, "on create");
 
-        // выдержать время, чтобы пользователь успел взглянуть на текущую Activity
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                goToNextActivity();
-            }
-        }, 2000);
+        // Исправление 1.1: Переход к следующему окну привязал на кнопку вместо выжидания двух секунд
+        final Button button = findViewById(R.id.button_to_second_activity);
+        button.setOnClickListener(buttonListener);
     }
 
     private void goToNextActivity() {
@@ -37,8 +41,10 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(LOG_TAG, "on activity result");
         if (requestCode == RESULT_REQUEST_CODE) {
-            Log.d(LOG_TAG, "result from second activity");
-            Toast toast = Toast.makeText(this, data.getStringExtra("return"), Toast.LENGTH_LONG);
+            Toast toast = Toast.makeText(this,
+                    data.getStringArrayListExtra(SecondActivity.RETURN_KEY).toString(),
+                    Toast.LENGTH_LONG
+            );
             toast.show();
         }
     }

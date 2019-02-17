@@ -15,21 +15,27 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
 public class SecondActivity extends AppCompatActivity {
-    String LOG_TAG = "second activity";
+    static final String LOG_TAG = "second activity";
+    //Исправление 3.1: Название ключа в статической константе
+    static final String RETURN_KEY = "return";
     static final int MY_PERMISSIONS_REQUEST_READ_CALENDAR = 98;
     TextView mTextView;
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String result = intent.getStringExtra("result");
+            ArrayList<String> result = intent.getStringArrayListExtra(MyService.BROADCAST_RETURN_KEY);
             Log.d("receiver", "got message: " + result);
             mTextView.setText("Calendar data: " + result);
             final Intent retIntent = new Intent();
-            retIntent.putExtra("return", result);
+            retIntent.putExtra(RETURN_KEY, result);
 
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
@@ -53,19 +59,21 @@ public class SecondActivity extends AppCompatActivity {
         Log.d(LOG_TAG, "on create");
         setContentView(R.layout.activity_second);
         mTextView = findViewById(R.id.textViewResult);
-        Log.d(LOG_TAG, "get permissions for calendar read");
+        // Исправление 2: Убрал лишние логи (здесь удалена строка, в других местах не помечено)
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter("my-service-handle"));
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            public void run() {
+
+        // Исправление 1.2: Запуск сервиса привязал на кнопку вместо выжидания двух секунд
+        final Button button = findViewById(R.id.button_to_second_activity);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
                 if (getPermissions()) {
                     // eсли разрешение на чтения календаря уже есть, запустить сервис
                     // в противном случае сделается запрос пользователю, и сервис запустится в onRequestPermissionsResult
                     startCalendarService();
                 }
             }
-        }, 2000);
+        });
 
     }
 
@@ -78,7 +86,6 @@ public class SecondActivity extends AppCompatActivity {
         Log.d(LOG_TAG, "get permissions");
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR)
                 != PackageManager.PERMISSION_GRANTED) {
-            Log.d(LOG_TAG, "not granted");
 
             if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
                 ActivityCompat.requestPermissions(this,
@@ -88,7 +95,6 @@ public class SecondActivity extends AppCompatActivity {
 
             return false;
         }
-        Log.d(LOG_TAG, "granted");
         return true;
     }
 
@@ -97,10 +103,7 @@ public class SecondActivity extends AppCompatActivity {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_CALENDAR: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(LOG_TAG, "user granted permission");
                     startCalendarService();
-                } else {
-                    Log.d(LOG_TAG, "user blocked permission");
                 }
             }
         }
