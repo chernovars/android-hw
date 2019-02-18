@@ -46,17 +46,21 @@ public class MyService extends IntentService {
         Log.d(LOG_TAG, "get calendars");
         Cursor cur = null;
         ContentResolver cr = getContentResolver();
-        Uri events_uri = Events.CONTENT_URI;
-        cur = cr.query(events_uri, EVENT_PROJECTION, null, null, null);
+        Uri eventsUri = Events.CONTENT_URI;
+        cur = cr.query(eventsUri, EVENT_PROJECTION, null, null, null);
 
         // Исправление 6: Результат выкачивания данных курсора сохраняется в список, который возвращается в итоге в MainActivity
         ArrayList<String> result = new ArrayList();
+        // Исправление 8: Индекс колонки определяется только один раз, а не в каждой итерации
+        int columnIndex = cur.getColumnIndex(Events.TITLE);
+        String title = null;
+
 
         if (cur != null) {
             while (cur.moveToNext() && result.size() < MAX_BROADCAST_LIST_SIZE) { // нет смысла выкачивать все события в данном примере
                 // Исправление 4: Индекс колонки выводится через метод cur.getColumnIndex
                 // Исправление 5: Объединил строки с объявлением и определением title, а также поменял название переменной с displayName на title
-                String title = cur.getString(cur.getColumnIndex(Events.TITLE));
+                title = cur.getString(columnIndex);
                 result.add(title);
             }
             cur.close();
