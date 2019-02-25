@@ -11,15 +11,32 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+
+
+
+
 public class DocumentFragment extends Fragment {
-    static final String BASE_TEXT = "Документ №";
-    static final String EXTRA_KEY = "ordinal";
+    static final private String EXTRA_KEY = "ordinal";
+
+    // Исправление 5.2 Статический метод для передачи аргументов фрагменту
+    public static DocumentFragment newInstance(int ordinal) {
+        Bundle args = new Bundle();
+        args.putInt(DocumentFragment.EXTRA_KEY, ordinal + 1);
+
+        DocumentFragment fragment = new DocumentFragment();
+        fragment.setArguments(args);
+
+        return fragment;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         TextView textView = (TextView) inflater.inflate(R.layout.fragment_1, container, false);
-        textView.setText(BASE_TEXT + Integer.toString(getArguments().getInt(EXTRA_KEY)));
+
+        // Исправление 4: Перенес строку "Документ №" из переменной в ресурсы
+        int ord  = getArguments().getInt(EXTRA_KEY);
+        textView.setText(getString(R.string.fragment_base_text, ord));
         return textView;
     }
 }

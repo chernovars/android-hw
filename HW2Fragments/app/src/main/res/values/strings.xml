@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">HW2-Fragments</string>
+    <string name="fragment_base_text">Документ №%1$d</string>
+
 </resources>

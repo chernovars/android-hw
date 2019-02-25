@@ -7,21 +7,16 @@ import androidx.fragment.app.FragmentManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     static final String EXTRA_FRAGMENTS_CREATED = "fragments_created";
-
-    int fragmentsCreated = 0;
-
     private FragmentManager mFragmentManager = getSupportFragmentManager();
     private MenuItem mDeleteMenuItem;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            fragmentsCreated = savedInstanceState.getInt(EXTRA_FRAGMENTS_CREATED);
-        }
+        // Исправление 3.1 Убрал восстановление значения счетчика фрагментов (в связи с исправлением 2)
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -31,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
         mDeleteMenuItem = menu.findItem(R.id.action_delete);
-        mDeleteMenuItem.setEnabled(fragmentsCreated != 0);
+        mDeleteMenuItem.setEnabled(mFragmentManager.getBackStackEntryCount() > 0);
         return true;
     }
 
@@ -45,37 +40,33 @@ public class MainActivity extends AppCompatActivity {
                 onMenuDeleteClicked();
                 return true;
         }
-
         return false;
     }
 
     private void onMenuAddClicked() {
-        Bundle args = new Bundle();
-        fragmentsCreated += 1;
-
-        if (fragmentsCreated == 1) {
-            mDeleteMenuItem.setEnabled(true);
-        }
-
-        args.putInt(DocumentFragment.EXTRA_KEY, fragmentsCreated);
-        Fragment fragment =  new DocumentFragment();
-        fragment.setArguments(args);
+        // Исправление 5.1: Вызов статического метода для передачи аргументов во фрагмент
+        Fragment fragment =  DocumentFragment.newInstance(mFragmentManager.getBackStackEntryCount());
 
         mFragmentManager.beginTransaction()
                 .add(R.id.container, fragment)
                 .addToBackStack(null)
                 .commit();
+        mFragmentManager.executePendingTransactions();
+
+        // Исправление 1.1: Упрощение if блока
+        // Исправление 2.1: Метод вместо атрибута объекта для счета фрагментов в бэкстеке
+        mDeleteMenuItem.setEnabled(mFragmentManager.getBackStackEntryCount() > 0);
     }
 
     private void onMenuDeleteClicked() {
         mFragmentManager.popBackStack();
-        fragmentsCreated -=1;
-        if (fragmentsCreated == 0) mDeleteMenuItem.setEnabled(false);
+        mFragmentManager.executePendingTransactions();
+
+        // Исправление 1.2: Упрощение if блока
+        // Исправление 2.2: Метод вместо атрибута объекта
+        mDeleteMenuItem.setEnabled(mFragmentManager.getBackStackEntryCount() > 0);
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putInt(EXTRA_FRAGMENTS_CREATED, fragmentsCreated);
-        super.onSaveInstanceState(outState);
-    }
+    // Исправление 3.2 Убрал onSaveInstanceState за ненадобностью (в связи с исправлением 2)
+
 }

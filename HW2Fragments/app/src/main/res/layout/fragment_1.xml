@@ -4,5 +4,6 @@
     android:layout_height="96dp"
     android:id="@+id/fragment_document"
     android:layout_gravity="center"
-    android:gravity="center">
+    android:gravity="center"
+    android:background="@color/colorPrimary">
 </TextView>
