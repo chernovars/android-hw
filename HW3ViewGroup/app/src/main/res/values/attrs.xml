@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<declare-styleable name="MyViewGroup">
+    <attr name="mvg_height" format="dimension" />
+    <attr name="mvg_horizontal_space_size" format="dimension" />
+    <attr name="mvg_vertical_space_size" format="dimension" />
+</declare-styleable>
+</resources>
