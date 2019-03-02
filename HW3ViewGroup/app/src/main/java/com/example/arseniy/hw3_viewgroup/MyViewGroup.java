@@ -10,6 +10,10 @@ public class MyViewGroup extends FrameLayout {
     int mHorizontalSpace;
     int mVerticalSpace;
     int mRowHeight;
+    int mGravity;
+
+    final static int GRAVITY_LEFT = 1;
+    final static int GRAVITY_RIGHT = -1;
 
     public MyViewGroup(Context context) {
         super(context);

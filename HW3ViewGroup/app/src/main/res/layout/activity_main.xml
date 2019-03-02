@@ -7,92 +7,143 @@
     tools:context=".MainActivity"
     android:gravity="center">
 
-    <FrameLayout
-        android:layout_width="wrap_content"
+    <com.example.arseniy.hw3_viewgroup.MyViewGroup
+        android:id="@+id/myViewGroup1"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:mvg_horizontal_space_size="50dp"
+        app:mvg_vertical_space_size="25dp">
 
-        <com.example.arseniy.hw3_viewgroup.MyViewGroup
-            android:layout_width="650px"
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip6"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="250px"
-            android:layout_marginTop="50px"
-            android:padding="100px"
-            app:mvg_height="10dp"
-            app:mvg_horizontal_space_size="100px"
-            app:mvg_vertical_space_size="100px">
+            android:text="Кошки"
+            app:chipBackgroundColor="@android:color/darker_gray"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text1" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Собаки"
+            app:chipBackgroundColor="@android:color/holo_red_dark"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text2" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Зебры"
+            app:chipBackgroundColor="@android:color/holo_green_light"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text3" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Слоны"
+            app:chipBackgroundColor="@android:color/holo_blue_dark"
+            app:closeIconVisible="true"  />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text4" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Голуби"
+            app:chipBackgroundColor="@android:color/holo_orange_light"
+            app:closeIconVisible="true"  />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text5" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Пчелы"
+            app:closeIconVisible="true"  />
+    </com.example.arseniy.hw3_viewgroup.MyViewGroup>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text6" />
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        app:layout_constraintTop_toBottomOf="@+id/myViewGroup1"
+        tools:layout_editor_absoluteX="8dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text7" />
+    <com.example.arseniy.hw3_viewgroup.MyViewGroup
+        android:id="@+id/myViewGroup2"
+        android:layout_width="250dp"
+        android:layout_height="515dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/view"
+        app:mvg_horizontal_space_size="50dp"
+        app:mvg_vertical_space_size="25dp"
+        tools:layout_editor_absoluteX="0dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text8" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip14"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Верблюды"
+            app:chipBackgroundColor="@android:color/holo_blue_bright"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text9" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip13"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Люди"
+            app:chipBackgroundColor="@android:color/holo_red_light"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text10" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:cursorVisible="true"
+            android:text="Носороги"
+            app:chipBackgroundColor="@android:color/holo_green_dark"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text11" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip11"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ламы"
+            app:chipBackgroundColor="@android:color/holo_orange_dark"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text12" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Лоси"
+            app:chipBackgroundColor="@android:color/holo_purple"
+            app:closeIconVisible="true" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Text13" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Орлы"
+            app:chipBackgroundColor="@android:color/tertiary_text_light"
+            app:closeIconVisible="true"  />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="50dp"
-                android:text="Text14" />
-        </com.example.arseniy.hw3_viewgroup.MyViewGroup>
-    </FrameLayout>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Стрекозы"
+            app:chipBackgroundColor="@color/colorAccent"
+            app:closeIconVisible="true" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip7"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Коровы"
+            app:chipBackgroundColor="@color/colorPrimary"
+            app:closeIconVisible="true" />
+    </com.example.arseniy.hw3_viewgroup.MyViewGroup>
 </androidx.constraintlayout.widget.ConstraintLayout>

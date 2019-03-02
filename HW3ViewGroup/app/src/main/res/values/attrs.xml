@@ -4,5 +4,6 @@
     <attr name="mvg_height" format="dimension" />
     <attr name="mvg_horizontal_space_size" format="dimension" />
     <attr name="mvg_vertical_space_size" format="dimension" />
+    <attr name="mvg_gravity" format="string" />
 </declare-styleable>
 </resources>
