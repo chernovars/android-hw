@@ -7,12 +7,17 @@
     tools:context=".MainActivity"
     android:gravity="center">
 
+    <!-- Один ViewGroup специально с шириной wrap_content, другой с шириной match_parent -->
     <com.example.arseniy.hw3_viewgroup.MyViewGroup
         android:id="@+id/myViewGroup1"
-        android:layout_width="250dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:mvg_horizontal_space_size="50dp"
-        app:mvg_vertical_space_size="25dp">
+        android:padding="10dp"
+        app:layout_constraintBottom_toTopOf="@+id/myViewGroup2"
+        app:layout_constraintTop_toTopOf="parent"
+        app:mvg_gravity="right"
+        app:mvg_horizontal_space_size="30dp"
+        app:mvg_vertical_space_size="30dp">
 
 
         <com.google.android.material.chip.Chip
@@ -45,7 +50,7 @@
             android:layout_height="wrap_content"
             android:text="Слоны"
             app:chipBackgroundColor="@android:color/holo_blue_dark"
-            app:closeIconVisible="true"  />
+            app:closeIconVisible="true" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip2"
@@ -53,14 +58,14 @@
             android:layout_height="wrap_content"
             android:text="Голуби"
             app:chipBackgroundColor="@android:color/holo_orange_light"
-            app:closeIconVisible="true"  />
+            app:closeIconVisible="true" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Пчелы"
-            app:closeIconVisible="true"  />
+            app:closeIconVisible="true" />
     </com.example.arseniy.hw3_viewgroup.MyViewGroup>
 
     <View
@@ -73,13 +78,16 @@
 
     <com.example.arseniy.hw3_viewgroup.MyViewGroup
         android:id="@+id/myViewGroup2"
-        android:layout_width="250dp"
-        android:layout_height="515dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:padding="20dp"
+        app:mvg_gravity="right"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/view"
-        app:mvg_horizontal_space_size="50dp"
-        app:mvg_vertical_space_size="25dp"
-        tools:layout_editor_absoluteX="0dp">
+        app:mvg_horizontal_space_size="25dp"
+        app:mvg_vertical_space_size="15dp"
+        app:mvg_height="25dp">
+
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip14"
@@ -128,7 +136,7 @@
             android:layout_height="wrap_content"
             android:text="Орлы"
             app:chipBackgroundColor="@android:color/tertiary_text_light"
-            app:closeIconVisible="true"  />
+            app:closeIconVisible="true" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip8"
@@ -146,4 +154,18 @@
             app:chipBackgroundColor="@color/colorPrimary"
             app:closeIconVisible="true" />
     </com.example.arseniy.hw3_viewgroup.MyViewGroup>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Гравитация"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

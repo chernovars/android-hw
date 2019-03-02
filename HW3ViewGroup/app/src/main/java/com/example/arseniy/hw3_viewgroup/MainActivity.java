@@ -5,11 +5,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.google.android.material.chip.Chip;
 
 public class MainActivity extends AppCompatActivity {
-    public MyViewGroup mMyViewGroup1;
+    MyViewGroup mMyViewGroup1;
     MyViewGroup mMyViewGroup2;
 
     @Override
@@ -21,6 +22,16 @@ public class MainActivity extends AppCompatActivity {
         setListeners(mMyViewGroup1);
         mMyViewGroup2 = findViewById(R.id.myViewGroup2);
         setListeners(mMyViewGroup2);
+
+        final Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mMyViewGroup1.opposeGravity();
+                mMyViewGroup1.requestLayout();
+                mMyViewGroup2.opposeGravity();
+                mMyViewGroup2.requestLayout();
+            }
+        });
     }
 
     void setListeners(MyViewGroup viewGroup) {

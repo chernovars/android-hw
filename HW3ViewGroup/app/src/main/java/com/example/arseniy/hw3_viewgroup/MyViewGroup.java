@@ -10,10 +10,10 @@ public class MyViewGroup extends FrameLayout {
     int mHorizontalSpace;
     int mVerticalSpace;
     int mRowHeight;
-    int mGravity;
+    String mGravity;
 
-    final static int GRAVITY_LEFT = 1;
-    final static int GRAVITY_RIGHT = -1;
+    final static String GRAVITY_LEFT = "left";
+    final static String GRAVITY_RIGHT = "right";
 
     public MyViewGroup(Context context) {
         super(context);
@@ -34,7 +34,14 @@ public class MyViewGroup extends FrameLayout {
         mHorizontalSpace = typedArray.getDimensionPixelSize(R.styleable.MyViewGroup_mvg_horizontal_space_size, 0);
         mVerticalSpace = typedArray.getDimensionPixelSize(R.styleable.MyViewGroup_mvg_vertical_space_size, 0);
         mRowHeight = typedArray.getDimensionPixelSize(R.styleable.MyViewGroup_mvg_height, -1);
+        mGravity = typedArray.getString(R.styleable.MyViewGroup_mvg_gravity);
+        if (mGravity == null)
+            mGravity = GRAVITY_LEFT;
         typedArray.recycle();
+    }
+
+    public void opposeGravity() {
+            mGravity = (mGravity == GRAVITY_LEFT) ? GRAVITY_RIGHT : GRAVITY_LEFT;
     }
 
     @Override
@@ -82,6 +89,7 @@ public class MyViewGroup extends FrameLayout {
                 }
             }
         }
+
         sumHeight += rowHeight;
 
         if (reachedMaxWidth || widthMode == MeasureSpec.EXACTLY)
@@ -101,7 +109,7 @@ public class MyViewGroup extends FrameLayout {
         int childHeight;
         l += this.getPaddingLeft();
         r -= this.getPaddingRight();
-        int width = r - l;
+        int widthWithoutPadding = r - l;
 
         int rowHeight = 0;
         boolean fixedHeight = (mRowHeight != -1);
@@ -115,14 +123,23 @@ public class MyViewGroup extends FrameLayout {
                 childHeight = fixedHeight ? mRowHeight : childLP.topMargin + child.getMeasuredHeight() + childLP.bottomMargin ;
                 rowHeight = Math.max(rowHeight, childHeight);
 
-                if ((widthOffset + childWidth) > width) {
+                if ((widthOffset + childWidth) > widthWithoutPadding) {
                     heightOffset += rowHeight + mVerticalSpace;
                     widthOffset = 0;
                 }
-                child.layout( this.getPaddingLeft() + widthOffset + childLP.leftMargin,
-                        this.getPaddingTop() + heightOffset + childLP.topMargin,
-                        this.getPaddingLeft() + widthOffset + childWidth - childLP.rightMargin,
-                        this.getPaddingTop() + heightOffset + childHeight - childLP.bottomMargin);
+
+                if (mGravity == GRAVITY_LEFT) {
+                    child.layout(this.getPaddingLeft() + widthOffset + childLP.leftMargin,
+                            this.getPaddingTop() + heightOffset + childLP.topMargin,
+                            this.getPaddingLeft() + widthOffset + childWidth - childLP.rightMargin,
+                            this.getPaddingTop() + heightOffset + childHeight - childLP.bottomMargin);
+                }
+                else {
+                    child.layout(this.getPaddingLeft() + widthWithoutPadding - widthOffset - childWidth + childLP.leftMargin,
+                            this.getPaddingTop() + heightOffset + childLP.topMargin,
+                            this.getPaddingLeft() + widthWithoutPadding - widthOffset - childLP.rightMargin,
+                            this.getPaddingTop() + heightOffset + childHeight - childLP.bottomMargin);
+                }
                 widthOffset += childWidth + mHorizontalSpace;
             }
             else {
