@@ -13,27 +13,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.NewsViewHolder> {
-    private ArrayList<String> mDataset;
-    private HashSet<CharSequence> mFavorites = new HashSet<>();
+    public void setDataset(ArrayList<CharSequence> mDataset) {
+        this.mDataset = mDataset;
+    }
 
-    Context mContext;
+    private ArrayList<CharSequence> mDataset;
+
+    private MainActivity mContext;
     String mMockShortDesc;
-
-    private BroadcastReceiver mFavoriteBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            CharSequence title = intent.getCharSequenceExtra(NewsActivity.BROADCAST_RETURN_NEWS_TITLE_EXTRA);
-            if (intent.getBooleanExtra(NewsActivity.BROADCAST_RETURN_IS_FAVORITE_EXTRA, false))
-                mFavorites.add(title);
-            else
-                mFavorites.remove(title);
-        }
-    };
-
 
     class NewsViewHolder extends RecyclerView.ViewHolder {
         TextView mTitle;
@@ -47,18 +39,19 @@ public class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.NewsVi
     }
 
 
-    public NewsListAdapter(@NonNull Context context, ArrayList<String> myDataset, String mockShortDesc) {
+    public NewsListAdapter(@NonNull MainActivity context, ArrayList<CharSequence> myDataset, String mockShortDesc) {
         mDataset = myDataset;
         mMockShortDesc = mockShortDesc;
         mContext = context;
-        LocalBroadcastManager.getInstance(context).registerReceiver(mFavoriteBroadcastReceiver,
+        LocalBroadcastManager.getInstance(context).registerReceiver(context.getFavoriteBroadcastReceiver(),
                 new IntentFilter(NewsActivity.BROADCAST_INTENT_ACTION));
     }
 
     private void startNewsActivity(NewsViewHolder v) {
+        // активити для одной "news"
         Intent intent = new Intent(mContext, NewsActivity.class);
         intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, v.mTitle.getText());
-        intent.putExtra(NewsActivity.NEWS_IS_FAVORITE_EXTRA, mFavorites.contains(v.mTitle.getText()));
+        intent.putExtra(NewsActivity.NEWS_IS_FAVORITE_EXTRA, mContext.getFavorites().contains(v.mTitle.getText()));
         mContext.startActivity(intent);
     }
 
