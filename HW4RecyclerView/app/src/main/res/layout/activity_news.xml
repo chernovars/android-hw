@@ -26,5 +26,11 @@
             android:layout_height="wrap_content"
             android:text="@string/news_full_desc_default"
             android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/news_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"/>
     </LinearLayout>
 </ScrollView>

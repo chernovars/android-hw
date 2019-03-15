@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -12,6 +14,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 public class NewsActivity extends AppCompatActivity {
     TextView mNewsTitle;
     TextView mNewsDesc;
+    TextView mNewsDate;
     MenuItem mToggleFavorite;
     boolean mIsFavorite;
     int starIconsIDs[] = {R.drawable.btn_rating_star_off_normal, R.drawable.btn_rating_star_off_pressed};
@@ -19,8 +22,10 @@ public class NewsActivity extends AppCompatActivity {
 
     static final String NEWS_TITLE_EXTRA = "news_title_extra";
     static final String NEWS_IS_FAVORITE_EXTRA = "news_is_favorite_extra";
+    static final String NEWS_DATE_EXTRA = "news_date_extra";
     static final String BROADCAST_RETURN_IS_FAVORITE_EXTRA = "news_is_favorite_bool_extra";
     static final String BROADCAST_RETURN_NEWS_TITLE_EXTRA = "news_favorite_title_extra";
+    static final String BROADCAST_RETURN_NEWS_DATE_EXTRA = "news_favorite_date_extra";
     static final String BROADCAST_INTENT_ACTION = "pass_favorite";
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -30,17 +35,18 @@ public class NewsActivity extends AppCompatActivity {
         mNewsTitle = findViewById(R.id.news_title);
         mNewsDesc = findViewById(R.id.news_full_desc);
         mNewsDesc.setText(getString(R.string.mock_news_full_desc));
+        mNewsDate = findViewById(R.id.news_date);
+
 
         Intent startIntent = getIntent();
         if (startIntent != null) {
             mNewsTitle.setText(startIntent.getStringExtra(NEWS_TITLE_EXTRA));
             mIsFavorite = startIntent.getBooleanExtra(NEWS_IS_FAVORITE_EXTRA, false);
+            mNewsDate.setText(startIntent.getCharSequenceExtra(NEWS_DATE_EXTRA));
         }
         else {
             mNewsTitle.setText(getString(R.string.mock_news_title));
         }
-
-
 
     }
 
@@ -67,6 +73,7 @@ public class NewsActivity extends AppCompatActivity {
         Intent retIntent = new Intent(BROADCAST_INTENT_ACTION);
         retIntent.putExtra(BROADCAST_RETURN_IS_FAVORITE_EXTRA, mIsFavorite);
         retIntent.putExtra(BROADCAST_RETURN_NEWS_TITLE_EXTRA, mNewsTitle.getText());
+        retIntent.putExtra(BROADCAST_RETURN_NEWS_DATE_EXTRA, mNewsDate.getText());
         LocalBroadcastManager.getInstance(this).sendBroadcast(retIntent);
     }
 
