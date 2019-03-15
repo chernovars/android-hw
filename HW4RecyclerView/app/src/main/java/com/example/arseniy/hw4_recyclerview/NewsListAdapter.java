@@ -1,65 +1,50 @@
 package com.example.arseniy.hw4_recyclerview;
 
 import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    static final int DATE_VIEWHOLDER_TYPE = 100;
-    static final int NEWS_VIEWHOLDER_TYPE = 101;
+    private static final int DATE_VIEWHOLDER_TYPE = 100;
+    private static final int NEWS_VIEWHOLDER_TYPE = 101;
 
     private ArrayList<Object> mDataset = new ArrayList<>();
-
     private MainActivity mContext;
-    String mMockShortDesc;
+    private String mMockShortDesc;
 
-    public <T> void setDataset(List<Pair<CharSequence, T>> dataset) {
-        this.mDataset.clear();
-        Date lastDate = new Date();
-        Date curDate;
-        for (Pair<CharSequence, T> pair : dataset) {
-            Object curVal = pair.second;
-            if (curVal instanceof CharSequence)
-                curDate = Utils.parseDateCharSequence((CharSequence) curVal);
-            else if ((curVal instanceof Date))
-                curDate = (Date) curVal;
-            else
-                throw new IllegalArgumentException();
+     void setDataset(List<Pair<CharSequence, Date>> dataset) {
+         // Приводит список пар в список объектов (дата или заголовок новости), "группируя" новости по датам
+         this.mDataset.clear();
+         Date lastDate = new Date();
+         Date curDate;
+         for (Pair<CharSequence, Date> pair : dataset) {
+             curDate = pair.second;
+             if (!lastDate.equals(curDate)) {
+                 this.mDataset.add(curDate);
+                 lastDate = curDate;
+             }
+             this.mDataset.add(pair);
 
-            if (!lastDate.equals(curDate)) {
-                this.mDataset.add(curDate);
-                lastDate = curDate;
-            }
-            this.mDataset.add(pair);
+         }
+         this.notifyDataSetChanged();
+     }
 
-        }
-        this.notifyDataSetChanged();
-    }
-
-
-
-    public <T> NewsListAdapter(@NonNull MainActivity context, ArrayList<Pair<CharSequence, T>> myDataset, String mockShortDesc) {
+    NewsListAdapter(@NonNull MainActivity context, ArrayList<Pair<CharSequence, Date>> myDataset, String mockShortDesc) {
         mMockShortDesc = mockShortDesc;
         mContext = context;
         if (myDataset != null)
             setDataset(myDataset);
     }
-
 
     @Override
     public int getItemViewType(int position) {
@@ -69,7 +54,8 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    @NonNull
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         switch (viewType) {
             case DATE_VIEWHOLDER_TYPE: {
                 View itemView = LayoutInflater.from(parent.getContext())
@@ -85,8 +71,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 throw new IllegalArgumentException(
                         "unknown viewType=" + viewType);
         }
-
-
     }
 
     @Override
@@ -134,15 +118,14 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
         @Override
         public void onClick(View v) {
+            // запускаем активити для новости
             Intent intent = new Intent(mContext, NewsActivity.class);
             intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, mTitle.getText());
-            intent.putExtra(NewsActivity.NEWS_IS_FAVORITE_EXTRA, mContext.getFavorites().containsKey(mTitle.getText()));
+            intent.putExtra(NewsActivity.NEWS_IS_FAVORITE_EXTRA, mContext.isFavorite(mTitle.getText()));
             intent.putExtra(NewsActivity.NEWS_DATE_EXTRA, Utils.dateFormat.format(mDate));
             mContext.startActivity(intent);
         }
     }
-
-
 
     class DateViewHolder extends RecyclerView.ViewHolder {
         TextView mDateTextView;
@@ -151,9 +134,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             super(itemView);
             mDateTextView = itemView.findViewById(R.id.news_date);
         }
-
     }
-
 }
 
 

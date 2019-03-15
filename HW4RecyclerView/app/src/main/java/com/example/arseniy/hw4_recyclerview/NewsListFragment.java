@@ -1,46 +1,32 @@
 package com.example.arseniy.hw4_recyclerview;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import static android.widget.LinearLayout.VERTICAL;
 
 public class NewsListFragment extends Fragment {
     static int MOCK_NEWS_COUNT = 20;
     private RecyclerView mRecyclerView;
-
-    public NewsListAdapter getAdapter() {
-        return mAdapter;
-    }
-
-    public void setAdapter(NewsListAdapter mAdapter) {
-        this.mAdapter = mAdapter;
-    }
-
     private NewsListAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    ArrayList<Pair<CharSequence, Date>> mNewsTitleDates = new ArrayList<>();
+    private ArrayList<Pair<CharSequence, Date>> mNewsTitleDates = new ArrayList<>();
 
-
-    public static NewsListFragment newInstance(ArrayList<CharSequence> newsTitles, ArrayList<Date> newsDates) {
+    static NewsListFragment newInstance(ArrayList<CharSequence> newsTitles, ArrayList<Date> newsDates) {
         NewsListFragment fragment = newInstance();
         if (newsTitles.size() != newsDates.size())
             throw new RuntimeException("newsTitles size should be equal to newsDates size");
@@ -59,8 +45,7 @@ public class NewsListFragment extends Fragment {
         return fragment;
     }
 
-
-    public static NewsListFragment newInstance() {
+    static NewsListFragment newInstance() {
         Bundle args = new Bundle();
         NewsListFragment fragment = new NewsListFragment();
         fragment.setArguments(args);
@@ -74,11 +59,6 @@ public class NewsListFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-    }
-
-    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_news_list, container, false);
@@ -88,7 +68,14 @@ public class NewsListFragment extends Fragment {
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setAdapter(mAdapter);
 
+        // Если захочется увидеть разделитель между новостями - раскоментировать следующие две строчки.
+        //DividerItemDecoration decoration = new DividerItemDecoration(getActivity(), VERTICAL);
+        //mRecyclerView.addItemDecoration(decoration);
+
         return view;
     }
 
+    NewsListAdapter getAdapter() {
+        return mAdapter;
+    }
 }

@@ -4,9 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -18,7 +16,6 @@ public class NewsActivity extends AppCompatActivity {
     MenuItem mToggleFavorite;
     boolean mIsFavorite;
     int starIconsIDs[] = {R.drawable.btn_rating_star_off_normal, R.drawable.btn_rating_star_off_pressed};
-
 
     static final String NEWS_TITLE_EXTRA = "news_title_extra";
     static final String NEWS_IS_FAVORITE_EXTRA = "news_is_favorite_extra";
@@ -37,17 +34,18 @@ public class NewsActivity extends AppCompatActivity {
         mNewsDesc.setText(getString(R.string.mock_news_full_desc));
         mNewsDate = findViewById(R.id.news_date);
 
-
         Intent startIntent = getIntent();
         if (startIntent != null) {
             mNewsTitle.setText(startIntent.getStringExtra(NEWS_TITLE_EXTRA));
-            mIsFavorite = startIntent.getBooleanExtra(NEWS_IS_FAVORITE_EXTRA, false);
+            if (savedInstanceState != null)
+                mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
+            else
+                mIsFavorite = startIntent.getBooleanExtra(NEWS_IS_FAVORITE_EXTRA, false);
             mNewsDate.setText(startIntent.getCharSequenceExtra(NEWS_DATE_EXTRA));
         }
         else {
             mNewsTitle.setText(getString(R.string.mock_news_title));
         }
-
     }
 
     @Override
@@ -70,6 +68,7 @@ public class NewsActivity extends AppCompatActivity {
     }
 
     private void sendLocalBroadCast() {
+        // передача информации об "избранности" в MainActivity
         Intent retIntent = new Intent(BROADCAST_INTENT_ACTION);
         retIntent.putExtra(BROADCAST_RETURN_IS_FAVORITE_EXTRA, mIsFavorite);
         retIntent.putExtra(BROADCAST_RETURN_NEWS_TITLE_EXTRA, mNewsTitle.getText());
@@ -77,6 +76,9 @@ public class NewsActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).sendBroadcast(retIntent);
     }
 
-
-
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
+    }
 }
