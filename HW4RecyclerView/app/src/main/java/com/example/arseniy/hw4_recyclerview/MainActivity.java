@@ -1,5 +1,6 @@
 package com.example.arseniy.hw4_recyclerview;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.util.Pair;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -26,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     private HashMap<CharSequence, Date> mFavorites = new HashMap<>();
     TabPagerAdapter mTabPagerAdapter;
 
+    private static final String FAVORITES_MAP_EXTRA = "favorites_map_extra";
+
     // Получение информации о добавлении/удалении из избранных (происходит в NewsActivity)
     private BroadcastReceiver mFavoriteBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -40,12 +43,15 @@ public class MainActivity extends AppCompatActivity {
                 mFavorites.remove(title);
 
             //Обновляем адаптер для фрагмента "избранное"
-            NewsListAdapter favNewsListAdapter = mTabPagerAdapter.getItem(TabPagerAdapter.FAVORITES_PAGE_POSITION).getAdapter();
-            updateFavoritesAdapter(favNewsListAdapter);
+            NewsListFragment favFrag = mTabPagerAdapter.mFavoritesFragment;
+            if (favFrag != null) {
+                NewsListAdapter favNewsListAdapter = favFrag.getAdapter();
+                updateFavoritesAdapter(favNewsListAdapter);
+            }
         }
     };
 
-    public void updateFavoritesAdapter(NewsListAdapter favNewsListAdapter){
+    public void updateFavoritesAdapter(@NonNull NewsListAdapter favNewsListAdapter){
 
         //Переводим мапу избранных в список нужный адаптеру в RecyclerView "избранное"
         ArrayList<Pair<CharSequence, Date>> favoritesList = new ArrayList<>();
@@ -68,30 +74,29 @@ public class MainActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(viewPager);
 
-        //обработка поворота экрана
-        MainActivity prevActivity = (MainActivity) getLastCustomNonConfigurationInstance();
-        if (prevActivity != null) {
-            //получаем старые "избранные" и PagerAdapter со старыми фрагментами внутри
-            mFavorites = prevActivity.mFavorites;
-            mTabPagerAdapter = prevActivity.mTabPagerAdapter;
-            viewPager.setAdapter(mTabPagerAdapter);
-            NewsListFragment favFragment = mTabPagerAdapter.getItem(TabPagerAdapter.FAVORITES_PAGE_POSITION);
-            NewsListAdapter favAdapter = favFragment.getAdapter();
-            updateFavoritesAdapter(favAdapter);
-        }
-        else {
-            LocalBroadcastManager.getInstance(this).registerReceiver(mFavoriteBroadcastReceiver,
-                    new IntentFilter(NewsActivity.BROADCAST_INTENT_ACTION));
-            mTabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), MainActivity.this);
-            viewPager.setAdapter(mTabPagerAdapter);
-        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(mFavoriteBroadcastReceiver,
+                new IntentFilter(NewsActivity.BROADCAST_INTENT_ACTION));
 
+        mTabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), MainActivity.this);
+        viewPager.setAdapter(mTabPagerAdapter);
     }
 
     @Override
-    public Object onRetainCustomNonConfigurationInstance() {
-        // для сохранения адаптера, хрянящего фрагменты для ViewPager при повороте
-        return this;
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable(FAVORITES_MAP_EXTRA, mFavorites);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        mFavorites = (HashMap<CharSequence, Date>) savedInstanceState.getSerializable(FAVORITES_MAP_EXTRA);
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mFavoriteBroadcastReceiver);
+        super.onDestroy();
     }
 }
 
