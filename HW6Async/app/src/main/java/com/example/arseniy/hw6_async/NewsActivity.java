@@ -7,10 +7,15 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-public class NewsActivity extends AppCompatActivity {
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
+
+public class NewsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Boolean>{
     TextView mNewsTitle;
     TextView mNewsDesc;
     TextView mNewsDate;
@@ -40,7 +45,7 @@ public class NewsActivity extends AppCompatActivity {
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
             else
-                mIsFavorite = NewsRepository.getInstance(getApplicationContext()).isFavorite(mTitle);
+                mIsFavorite = false;//NewsRepository.getInstance(getApplicationContext()).isFavorite(mTitle);
             mNewsDate.setText(Utils.customFormatDate(news.date));
             mNewsDesc.setText(news.fullDesc);
 
@@ -50,6 +55,12 @@ public class NewsActivity extends AppCompatActivity {
             mNewsTitle.setText(getString(R.string.mock_news_title));
             mNewsDesc.setText(getString(R.string.mock_news_full_desc));
         }
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        LoaderManager.getInstance(this).initLoader(0, null, this);
     }
 
     @Override
@@ -81,5 +92,29 @@ public class NewsActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
+    }
+
+
+    @Override
+    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
+        return new FavoritesLoader(this, mTitle);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Boolean> loader, Boolean isFavorite) {
+        if (mToggleFavorite != null) {
+            mIsFavorite = isFavorite;
+            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
+        }
+
+    }
+    @Override
+    public void onLoaderReset(Loader<Boolean> loader) {
+        // clear references
+    }
+
+    @Override
+    public Lifecycle getLifecycle() {
+        return super.getLifecycle();
     }
 }
