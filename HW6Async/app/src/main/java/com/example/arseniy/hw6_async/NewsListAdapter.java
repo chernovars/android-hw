@@ -1,20 +1,24 @@
 package com.example.arseniy.hw6_async;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.core.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+interface NewsAdapterOnTaskCompleted{
+    void onTaskCompleted(News [] news);
+}
+
+public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements NewsAdapterOnTaskCompleted {
     private static final int DATE_VIEWHOLDER_TYPE = 100;
     private static final int NEWS_VIEWHOLDER_TYPE = 101;
 
@@ -27,7 +31,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         mOnlyFavorites = onlyFavorites;
         if (!onlyFavorites) {
             //заполняем адаптер для RecyclerView новостями из таблицы новостей
-            adaptNewsToDataset(NewsDatabase.getInstance(context).getNewsDao().getAllNews());
+            new GetAllNewsAsyncTask(mContext, this).execute();
         }
         else {
             //заполняем адаптер для RecyclerView новостями из базы, заголовки которых есть в таблице избранных
@@ -54,9 +58,13 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void updateFavorites() {
         if (mOnlyFavorites)
-            adaptNewsToDataset(NewsRepository.getInstance(mContext).getNewsWhichAreFavorite());
+            new GetFavoritesAsyncTask(mContext, this).execute();
         else
             throw new RuntimeException("This method should be called only for favorites tabs");
+    }
+
+    public void onTaskCompleted(News [] news) {
+        adaptNewsToDataset(news);
     }
 
     @Override
@@ -148,7 +156,43 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 }
 
+abstract class GetNewsArrAsyncTask extends AsyncTask<Void, Void, News[]> {
+    protected WeakReference<NewsAdapterOnTaskCompleted> mOnTaskCompleted;
+    protected WeakReference<MainActivity> mMainActivityWeakReference;
 
+    GetNewsArrAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
+        mMainActivityWeakReference = new WeakReference<>(mainActivity);
+        mOnTaskCompleted = new WeakReference<>(onTaskCompleted);
+    }
+
+    @Override
+    protected void onPostExecute(News[] news) {
+        super.onPostExecute(news);
+        mOnTaskCompleted.get().onTaskCompleted(news);
+    }
+}
+
+class GetFavoritesAsyncTask extends GetNewsArrAsyncTask {
+    GetFavoritesAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
+        super(mainActivity, onTaskCompleted);
+    }
+
+    @Override
+    protected News[] doInBackground(Void... voids) {
+        return NewsRepository.getInstance(mMainActivityWeakReference.get()).getNewsWhichAreFavorite();
+    }
+}
+
+class GetAllNewsAsyncTask extends GetNewsArrAsyncTask {
+    GetAllNewsAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
+        super(mainActivity, onTaskCompleted);
+    }
+
+    @Override
+    protected News[] doInBackground(Void... voids) {
+        return NewsRepository.getInstance(mMainActivityWeakReference.get()).getAll();
+    }
+}
 
 
 

@@ -1,21 +1,27 @@
 package com.example.arseniy.hw6_async;
 
+import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.ref.WeakReference;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.util.Pair;
 
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.Loader;
+interface NewsActivityOnTaskCompleted {
+    void onTaskCompleted(Boolean res);
+    void onTaskCompleted(News news);
+    void onAddFavoriteSuccess();
+}
 
-public class NewsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Boolean>{
+public class NewsActivity extends AppCompatActivity implements NewsActivityOnTaskCompleted {
     TextView mNewsTitle;
     TextView mNewsDesc;
     TextView mNewsDate;
@@ -28,7 +34,8 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
 
     String mTitle;
 
-    @Override protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news);
 
@@ -41,16 +48,13 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
             mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            News news = NewsRepository.getInstance(getApplicationContext()).get(mTitle);
+            new GetNewsAsyncTask(this).execute(mTitle);
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
             else
-                mIsFavorite = false;//NewsRepository.getInstance(getApplicationContext()).isFavorite(mTitle);
-            mNewsDate.setText(Utils.customFormatDate(news.date));
-            mNewsDesc.setText(news.fullDesc);
+                mIsFavorite = false;
 
-        }
-        else {
+        } else {
             //сюда не должны заходить (обычно)
             mNewsTitle.setText(getString(R.string.mock_news_title));
             mNewsDesc.setText(getString(R.string.mock_news_full_desc));
@@ -58,9 +62,14 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     @Override
+    public void onTaskCompleted(News news) {
+        mNewsDate.setText(Utils.customFormatDate(news.date));
+        mNewsDesc.setText(news.fullDesc);
+    }
+
+    @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        LoaderManager.getInstance(this).initLoader(0, null, this);
     }
 
     @Override
@@ -71,22 +80,22 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
 
         mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
 
+        final NewsActivityOnTaskCompleted newsActivity = this;
+
         mToggleFavorite.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 mIsFavorite = !mIsFavorite;
                 mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-                if (mIsFavorite) {
-                    NewsRepository.getInstance(getApplicationContext()).addFavorite(mTitle);
-                    Toast.makeText(getApplicationContext(), R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
-                }
-                else
-                    NewsRepository.getInstance(getApplicationContext()).removeFavorite(mTitle);
+                Pair<String, Boolean> argsForAsync = new Pair<>(mTitle, mIsFavorite);
+                new SetFavoriteAsyncTask(newsActivity).execute(argsForAsync);
                 return true;
             }
         });
+        new IsFavoriteAsyncTask(this).execute(mTitle);
         return true;
     }
+
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -96,25 +105,81 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     @Override
-    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
-        return new FavoritesLoader(this, mTitle);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Boolean> loader, Boolean isFavorite) {
+    public void onTaskCompleted(Boolean res) {
         if (mToggleFavorite != null) {
-            mIsFavorite = isFavorite;
+            mIsFavorite = res;
             mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
         }
-
-    }
-    @Override
-    public void onLoaderReset(Loader<Boolean> loader) {
-        // clear references
     }
 
     @Override
-    public Lifecycle getLifecycle() {
-        return super.getLifecycle();
+    public void onAddFavoriteSuccess() {
+        Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
     }
 }
+
+
+class IsFavoriteAsyncTask extends AsyncTask<String, Void, Boolean> {
+    private WeakReference<NewsActivityOnTaskCompleted>mListener;
+
+    IsFavoriteAsyncTask(NewsActivityOnTaskCompleted listener) {
+        mListener = new WeakReference<>(listener);
+    }
+
+    @Override
+    protected Boolean doInBackground(String... strings) {
+        return NewsRepository.getInstance((Context) mListener.get()).isFavorite(strings[0]);
+    }
+
+    @Override
+    protected void onPostExecute(Boolean aBoolean) {
+        super.onPostExecute(aBoolean);
+        mListener.get().onTaskCompleted(aBoolean);
+    }
+}
+
+class GetNewsAsyncTask extends AsyncTask<String, Void, News> {
+    private WeakReference<NewsActivityOnTaskCompleted>mListener;
+
+    GetNewsAsyncTask(NewsActivityOnTaskCompleted listener) {
+        mListener = new WeakReference<>(listener);
+    }
+
+    @Override
+    protected News doInBackground(String... strings) {
+        return NewsRepository.getInstance((Context) mListener.get()).get(strings[0]);
+    }
+
+    @Override
+    protected void onPostExecute(News news) {
+        super.onPostExecute(news);
+        mListener.get().onTaskCompleted(news);
+    }
+}
+
+class SetFavoriteAsyncTask extends AsyncTask<Pair<String, Boolean>, Void, Boolean> {
+    private WeakReference<NewsActivityOnTaskCompleted>mListener;
+
+    SetFavoriteAsyncTask(NewsActivityOnTaskCompleted listener) {
+        mListener = new WeakReference<>(listener);
+    }
+
+    @Override
+    protected Boolean doInBackground(Pair<String, Boolean>... pairs) {
+        boolean isNowFavorite = pairs[0].second;
+        String title = pairs[0].first;
+        if (isNowFavorite)
+            NewsRepository.getInstance((Context) mListener.get()).addFavorite(title);
+        else
+            NewsRepository.getInstance((Context) mListener.get()).removeFavorite(title);
+        return isNowFavorite;
+    }
+
+    @Override
+    protected void onPostExecute(Boolean isFavorite) {
+        super.onPostExecute(isFavorite);
+        if (isFavorite)
+            mListener.get().onAddFavoriteSuccess();
+    }
+}
+

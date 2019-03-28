@@ -37,8 +37,7 @@ public abstract class NewsDatabase extends RoomDatabase {
         return Room.databaseBuilder(
                 context,
                 NewsDatabase.class,
-                DB_NAME).allowMainThreadQueries()
-                        .build();
+                DB_NAME).build();
     }
 
     public abstract NewsDao getNewsDao();
@@ -56,7 +55,6 @@ class Converters {
         return date == null ? null : date.getTime();
     }
 }
-
 
 @Dao
 interface NewsDao {

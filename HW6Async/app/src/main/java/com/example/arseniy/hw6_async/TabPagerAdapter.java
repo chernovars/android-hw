@@ -1,10 +1,14 @@
 package com.example.arseniy.hw6_async;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.view.ViewGroup;
+
+import java.lang.ref.WeakReference;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class TabPagerAdapter extends FragmentPagerAdapter {
     private String tabTitles[];
@@ -28,8 +32,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
         NewsRepository repo = NewsRepository.getInstance(mContext);
         switch (position) {
             case RECENTS_PAGE_POSITION:
-                repo.removeAll();
-                repo.add(Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext));
+                new PopulateDBAsyncTask(repo, mContext);
                 f = NewsListFragment.newInstance(MAIN_FLAG);
                 break;
             case FAVORITES_PAGE_POSITION:
@@ -46,5 +49,22 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
         return tabTitles[position];
     }
 
+}
+
+class PopulateDBAsyncTask extends AsyncTask<Integer, Void, Void> {
+    private NewsRepository mRepository;
+    private WeakReference<Context> mContext;
+
+    PopulateDBAsyncTask(NewsRepository repository, Context context) {
+        mRepository = repository;
+        mContext = new WeakReference<>(context);
+    }
+
+    @Override
+    protected Void doInBackground(Integer... integers) {
+        mRepository.removeAll();
+        mRepository.add(Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext.get()));
+        return null;
+    }
 }
 

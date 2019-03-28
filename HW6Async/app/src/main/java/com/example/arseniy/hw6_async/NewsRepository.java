@@ -47,6 +47,10 @@ public class NewsRepository{
         return mNewsDao.getNewsByTitle(title);
     }
 
+    News [] getAll() {
+        return mNewsDao.getAllNews();
+    }
+
     News [] getNewsWhichAreFavorite() {
         return mNewsDao.getNewsWhichAreFavorite();
     }
