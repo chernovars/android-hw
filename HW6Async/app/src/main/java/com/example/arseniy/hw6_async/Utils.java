@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Random;
 
 class Utils {
     private static DateFormatSymbols myDateFormatSymbols = new DateFormatSymbols(){
@@ -42,12 +43,13 @@ class Utils {
 
         ArrayList<Date> datesInRange = new ArrayList<>();
         calendar.setTime(startDate);
+        Random random = new Random();
 
         for (int i=0; i < days; i++) {
             Date result = calendar.getTime();
             for (int j=0; j < repeats; j++)
                 datesInRange.add(result);
-            calendar.add(Calendar.DATE, -1);
+            calendar.add(Calendar.HOUR, -(random.nextInt(8) + 8));
         }
         return datesInRange;
     }
@@ -61,7 +63,7 @@ class Utils {
     }
 
     private static ArrayList<Date> generateMockDates(int mockNewsCount) {
-        return getPreviousDays(mockNewsCount/2, 2);
+        return getPreviousDays(mockNewsCount, 1);
     }
 
     static ArrayList<News> generateNews(int mockNewsCount, Context context) {

@@ -1,5 +1,7 @@
 package com.example.arseniy.hw6_async;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,18 +31,27 @@ public class NewsListFragment extends Fragment {
         NewsListFragment fragment = new NewsListFragment();
         fragment.setArguments(args);
         fragment.isMain = isMain;
+        fragment.setRetainInstance(true);
         return fragment;
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mAdapter = new NewsListAdapter((MainActivity) getActivity(), !isMain);
-        if (!isMain) {
-            // передаем в репозиторий ссылку на адаптер избранных, чтобы он оттуда обновлялся при добавлении/удалении избранных
-            NewsRepository.getInstance(getContext()).setFavoritesAdapter(mAdapter);
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        if (mAdapter == null) {
+            mAdapter = new NewsListAdapter((MainActivity) getActivity(), !isMain);
+            if (!isMain) {
+                // передаем в репозиторий ссылку на адаптер избранных, чтобы он оттуда обновлялся при добавлении/удалении избранных
+                NewsRepository.getInstance(context).setFavoritesAdapter(mAdapter);
+            }
+        }
+        else {
+            // обновляем ссылку на новую активити (при повороте), для избежания утечки старой активити
+            mAdapter.setmContext((MainActivity) getActivity());
         }
     }
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,

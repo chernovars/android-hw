@@ -32,7 +32,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
         NewsRepository repo = NewsRepository.getInstance(mContext);
         switch (position) {
             case RECENTS_PAGE_POSITION:
-                new PopulateDBAsyncTask(repo, mContext);
+                new PopulateDBAsyncTask(repo, mContext).execute();
                 f = NewsListFragment.newInstance(MAIN_FLAG);
                 break;
             case FAVORITES_PAGE_POSITION:
@@ -41,14 +41,12 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
             default:
                 throw new RuntimeException();
         }
-        f.setRetainInstance(true);
         return f;
     }
 
     @Override public CharSequence getPageTitle(int position) {
         return tabTitles[position];
     }
-
 }
 
 class PopulateDBAsyncTask extends AsyncTask<Integer, Void, Void> {
@@ -63,7 +61,9 @@ class PopulateDBAsyncTask extends AsyncTask<Integer, Void, Void> {
     @Override
     protected Void doInBackground(Integer... integers) {
         mRepository.removeAll();
-        mRepository.add(Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext.get()));
+        Context context = mContext.get();
+        if (context != null)
+            mRepository.add(Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext.get()));
         return null;
     }
 }

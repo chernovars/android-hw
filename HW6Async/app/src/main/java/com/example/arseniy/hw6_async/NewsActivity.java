@@ -158,7 +158,7 @@ class GetNewsAsyncTask extends AsyncTask<String, Void, News> {
 }
 
 class SetFavoriteAsyncTask extends AsyncTask<Pair<String, Boolean>, Void, Boolean> {
-    private WeakReference<NewsActivityOnTaskCompleted>mListener;
+    private WeakReference<NewsActivityOnTaskCompleted> mListener;
 
     SetFavoriteAsyncTask(NewsActivityOnTaskCompleted listener) {
         mListener = new WeakReference<>(listener);
@@ -168,10 +168,14 @@ class SetFavoriteAsyncTask extends AsyncTask<Pair<String, Boolean>, Void, Boolea
     protected Boolean doInBackground(Pair<String, Boolean>... pairs) {
         boolean isNowFavorite = pairs[0].second;
         String title = pairs[0].first;
-        if (isNowFavorite)
-            NewsRepository.getInstance((Context) mListener.get()).addFavorite(title);
-        else
-            NewsRepository.getInstance((Context) mListener.get()).removeFavorite(title);
+        NewsActivityOnTaskCompleted listener = mListener.get();
+        if (listener != null) {
+            if (isNowFavorite)
+                NewsRepository.getInstance((Context) mListener.get()).addFavorite(title);
+            else
+                NewsRepository.getInstance((Context) mListener.get()).removeFavorite(title);
+        }
+
         return isNowFavorite;
     }
 

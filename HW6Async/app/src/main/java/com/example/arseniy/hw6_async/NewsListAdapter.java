@@ -19,8 +19,10 @@ interface NewsAdapterOnTaskCompleted{
 }
 
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements NewsAdapterOnTaskCompleted {
-    private static final int DATE_VIEWHOLDER_TYPE = 100;
+    private static final int DATESTR_VIEWHOLDER_TYPE = 100;
     private static final int NEWS_VIEWHOLDER_TYPE = 101;
+
+    private static final String STRING_VALUE_EQUALS_FALSE = "227e5c51ccf3d061d3e75215479dfe9b";
 
     private ArrayList<Object> mDataset = new ArrayList<>();
     private MainActivity mContext;
@@ -40,16 +42,20 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         this.notifyDataSetChanged();
     }
 
+    void setmContext(@NonNull MainActivity activity) {
+        mContext = activity;
+    }
+
     private void adaptNewsToDataset(News [] newsArr) {
         //группировка по датам для датасета адаптера
         mDataset.clear();
-        Date lastDate = new Date();
-        Date curDate;
+        CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new Date()); //текущая дата
+        CharSequence curDateStr;
         for (News news : newsArr) {
-            curDate = news.date;
-            if (!lastDate.equals(curDate)) {
-                mDataset.add(curDate);
-                lastDate = curDate;
+            curDateStr = Utils.customFormatDate(news.date);
+            if (!lastDateStr.equals(curDateStr)) {
+                mDataset.add(curDateStr);
+                lastDateStr = curDateStr;
             }
             mDataset.add(news);
         }
@@ -69,8 +75,8 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     @Override
     public int getItemViewType(int position) {
-        return mDataset.get(position) instanceof Date
-                ? DATE_VIEWHOLDER_TYPE
+        return mDataset.get(position) instanceof String
+                ? DATESTR_VIEWHOLDER_TYPE
                 : NEWS_VIEWHOLDER_TYPE;
     }
 
@@ -78,7 +84,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     @NonNull
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         switch (viewType) {
-            case DATE_VIEWHOLDER_TYPE: {
+            case DATESTR_VIEWHOLDER_TYPE: {
                 View itemView = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.viewholder_date, parent, false);
                 return new DateViewHolder(itemView);
@@ -98,10 +104,10 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         int viewType = getItemViewType(position);
         switch (viewType) {
-            case DATE_VIEWHOLDER_TYPE: {
-                Date date = (Date) mDataset.get(position);
+            case DATESTR_VIEWHOLDER_TYPE: {
+                CharSequence dateStr = (CharSequence) mDataset.get(position);
                 DateViewHolder dateViewHolder = (DateViewHolder) holder;
-                dateViewHolder.mDateTextView.setText(Utils.customFormatDate(date));
+                dateViewHolder.mDateTextView.setText(dateStr);
                 break;
             }
             case NEWS_VIEWHOLDER_TYPE: {
@@ -168,7 +174,9 @@ abstract class GetNewsArrAsyncTask extends AsyncTask<Void, Void, News[]> {
     @Override
     protected void onPostExecute(News[] news) {
         super.onPostExecute(news);
-        mOnTaskCompleted.get().onTaskCompleted(news);
+        NewsAdapterOnTaskCompleted onTaskCompleted = mOnTaskCompleted.get();
+        if (onTaskCompleted != null)
+            onTaskCompleted.onTaskCompleted(news);
     }
 }
 
@@ -179,7 +187,11 @@ class GetFavoritesAsyncTask extends GetNewsArrAsyncTask {
 
     @Override
     protected News[] doInBackground(Void... voids) {
-        return NewsRepository.getInstance(mMainActivityWeakReference.get()).getNewsWhichAreFavorite();
+        MainActivity mainActivity = mMainActivityWeakReference.get();
+        if (mainActivity != null)
+            return NewsRepository.getInstance(mMainActivityWeakReference.get()).getNewsWhichAreFavorite();
+        else
+            throw new RuntimeException();
     }
 }
 
@@ -190,7 +202,11 @@ class GetAllNewsAsyncTask extends GetNewsArrAsyncTask {
 
     @Override
     protected News[] doInBackground(Void... voids) {
-        return NewsRepository.getInstance(mMainActivityWeakReference.get()).getAll();
+        MainActivity mainActivity = mMainActivityWeakReference.get();
+        if (mainActivity != null)
+            return NewsRepository.getInstance(mMainActivityWeakReference.get()).getAll();
+        else
+            throw new RuntimeException();
     }
 }
 
