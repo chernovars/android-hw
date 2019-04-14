@@ -1,19 +1,18 @@
 package com.example.arseniy.hw7_rxjava;
 
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
-
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.util.Pair;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 interface NewsActivityOnTaskCompleted {
     void onTaskCompleted(Boolean res);
@@ -51,7 +50,8 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
             mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            new GetNewsAsyncTask(this).execute(mNewsId);
+            rxGetNews(mNewsId);
+
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
             else
@@ -64,10 +64,25 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
         }
     }
 
+    void rxGetNews(int id) {
+        NewsRepository.getInstance(this).get(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onTaskCompleted);
+    }
+
     @Override
     public void onTaskCompleted(News news) {
         mNewsDate.setText(Utils.customFormatDate(news.date));
         mNewsDesc.setText(news.fullDesc);
+    }
+
+    @Override
+    public void onTaskCompleted(Boolean res) {
+        if (mToggleFavorite != null) {
+            mIsFavorite = res;
+            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
+        }
     }
 
     @Override
@@ -90,13 +105,34 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
             public boolean onMenuItemClick(MenuItem item) {
                 mIsFavorite = !mIsFavorite;
                 mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-                Pair<Integer, Boolean> argsForAsync = new Pair<>(mNewsId, mIsFavorite);
-                new SetFavoriteAsyncTask(newsActivity).execute(argsForAsync);
+                rxSetIsFavorite(mNewsId, mIsFavorite);
                 return true;
             }
         });
-        new IsFavoriteAsyncTask(this).execute(mNewsId);
+
+        rxCheckIsFavorite(mNewsId);
         return true;
+    }
+
+    private void rxCheckIsFavorite(int newsId) {
+        NewsRepository.getInstance(this).isFavorite(newsId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onTaskCompleted);
+    }
+
+    private void rxSetIsFavorite(int newsId, boolean isNowFavorite) {
+        if (isNowFavorite)
+            Single.just(newsId)
+                    .doOnSuccess(value -> NewsRepository.getInstance(this).addFavorite(value))
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess(value -> onAddFavoriteSuccess())
+                    .subscribe();
+        else
+            Single.just(newsId)
+                    .observeOn(Schedulers.io())
+                    .subscribe(NewsRepository.getInstance(this)::removeFavorite);
     }
 
 
@@ -106,15 +142,6 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
     }
 
-
-    @Override
-    public void onTaskCompleted(Boolean res) {
-        if (mToggleFavorite != null) {
-            mIsFavorite = res;
-            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-        }
-    }
-
     @Override
     public void onAddFavoriteSuccess() {
         Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
@@ -122,71 +149,4 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
 }
 
 
-class IsFavoriteAsyncTask extends AsyncTask<Integer, Void, Boolean> {
-    private WeakReference<NewsActivityOnTaskCompleted>mListener;
-
-    IsFavoriteAsyncTask(NewsActivityOnTaskCompleted listener) {
-        mListener = new WeakReference<>(listener);
-    }
-
-    @Override
-    protected Boolean doInBackground(Integer... integers) {
-        return NewsRepository.getInstance((Context) mListener.get()).isFavorite(integers[0]);
-    }
-
-    @Override
-    protected void onPostExecute(Boolean aBoolean) {
-        super.onPostExecute(aBoolean);
-        mListener.get().onTaskCompleted(aBoolean);
-    }
-}
-
-class GetNewsAsyncTask extends AsyncTask<Integer, Void, News> {
-    private WeakReference<NewsActivityOnTaskCompleted>mListener;
-
-    GetNewsAsyncTask(NewsActivityOnTaskCompleted listener) {
-        mListener = new WeakReference<>(listener);
-    }
-
-    @Override
-    protected News doInBackground(Integer... integers) {
-        return NewsRepository.getInstance((Context) mListener.get()).get(integers[0]);
-    }
-
-    @Override
-    protected void onPostExecute(News news) {
-        super.onPostExecute(news);
-        mListener.get().onTaskCompleted(news);
-    }
-}
-
-class SetFavoriteAsyncTask extends AsyncTask<Pair<Integer, Boolean>, Void, Boolean> {
-    private WeakReference<NewsActivityOnTaskCompleted> mListener;
-
-    SetFavoriteAsyncTask(NewsActivityOnTaskCompleted listener) {
-        mListener = new WeakReference<>(listener);
-    }
-
-    @Override
-    protected Boolean doInBackground(Pair<Integer, Boolean>... pairs) {
-        boolean isNowFavorite = pairs[0].second;
-        int id = pairs[0].first;
-        NewsActivityOnTaskCompleted listener = mListener.get();
-        if (listener != null) {
-            if (isNowFavorite)
-                NewsRepository.getInstance((Context) mListener.get()).addFavorite(id);
-            else
-                NewsRepository.getInstance((Context) mListener.get()).removeFavorite(id);
-        }
-
-        return isNowFavorite;
-    }
-
-    @Override
-    protected void onPostExecute(Boolean isFavorite) {
-        super.onPostExecute(isFavorite);
-        if (isFavorite)
-            mListener.get().onAddFavoriteSuccess();
-    }
-}
 

@@ -2,6 +2,12 @@ package com.example.arseniy.hw7_rxjava;
 
 import android.content.Context;
 
+import java.util.List;
+
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
+import io.reactivex.Single;
+
 public class NewsRepository{
     private NewsDao mNewsDao;
     private FavNewsDao mFavNewsDao;
@@ -43,21 +49,20 @@ public class NewsRepository{
         mNewsDao.deleteAll();
     }
 
-    News get(int id) {
+    Maybe<News> get(int id) {
         return mNewsDao.getNewsById(id);
     }
 
-    News [] getAll() {
+    Single<List<News>> getAll() {
         return mNewsDao.getAllNews();
     }
 
-    News [] getNewsWhichAreFavorite() {
+    Single<List<News>> getNewsWhichAreFavorite() {
         return mNewsDao.getNewsWhichAreFavorite();
     }
 
-    boolean isFavorite(int id) {
-        FavNews fav = mFavNewsDao.getFavNewsById(id);
-        return fav != null;
+    Single<Boolean> isFavorite(int id) {
+        return mFavNewsDao.getFavNewsById(id).isEmpty();
     }
 
     void addFavorite(int id) {
@@ -65,7 +70,6 @@ public class NewsRepository{
         fav.id = id;
         mFavNewsDao.insert(fav);
         if (favoritesAdapter != null) {
-
             favoritesAdapter.updateFavorites();
         }
     }

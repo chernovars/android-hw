@@ -7,18 +7,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 interface NewsAdapterOnTaskCompleted{
     void onTaskCompleted(News [] news);
 }
 
-public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements NewsAdapterOnTaskCompleted {
+public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;
     private static final int NEWS_VIEWHOLDER_TYPE = 101;
 
@@ -33,7 +36,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         mOnlyFavorites = onlyFavorites;
         if (!onlyFavorites) {
             //заполняем адаптер для RecyclerView новостями из таблицы новостей
-            new GetAllNewsAsyncTask(mContext, this).execute();
+            rxGetAllNews();
         }
         else {
             //заполняем адаптер для RecyclerView новостями из базы, заголовки которых есть в таблице избранных
@@ -42,11 +45,18 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         this.notifyDataSetChanged();
     }
 
+    private void rxGetAllNews() {
+       NewsRepository.getInstance(mContext).getAll()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::adaptNewsToDataset);
+    }
+
     void setmContext(@NonNull MainActivity activity) {
         mContext = activity;
     }
 
-    private void adaptNewsToDataset(News [] newsArr) {
+    private void adaptNewsToDataset(List<News> newsArr) {
         //группировка по датам для датасета адаптера
         mDataset.clear();
         CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new Date()); //текущая дата
@@ -64,13 +74,16 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void updateFavorites() {
         if (mOnlyFavorites)
-            new GetFavoritesAsyncTask(mContext, this).execute();
+            rxGetFavorites();
         else
             throw new RuntimeException("This method should be called only for favorites tabs");
     }
 
-    public void onTaskCompleted(News [] news) {
-        adaptNewsToDataset(news);
+    private void rxGetFavorites() {
+        NewsRepository.getInstance(mContext).getNewsWhichAreFavorite()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::adaptNewsToDataset);
     }
 
     @Override
@@ -165,53 +178,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 }
 
-abstract class GetNewsArrAsyncTask extends AsyncTask<Void, Void, News[]> {
-    protected WeakReference<NewsAdapterOnTaskCompleted> mOnTaskCompleted;
-    protected WeakReference<MainActivity> mMainActivityWeakReference;
-
-    GetNewsArrAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
-        mMainActivityWeakReference = new WeakReference<>(mainActivity);
-        mOnTaskCompleted = new WeakReference<>(onTaskCompleted);
-    }
-
-    @Override
-    protected void onPostExecute(News[] news) {
-        super.onPostExecute(news);
-        NewsAdapterOnTaskCompleted onTaskCompleted = mOnTaskCompleted.get();
-        if (onTaskCompleted != null)
-            onTaskCompleted.onTaskCompleted(news);
-    }
-}
-
-class GetFavoritesAsyncTask extends GetNewsArrAsyncTask {
-    GetFavoritesAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
-        super(mainActivity, onTaskCompleted);
-    }
-
-    @Override
-    protected News[] doInBackground(Void... voids) {
-        MainActivity mainActivity = mMainActivityWeakReference.get();
-        if (mainActivity != null)
-            return NewsRepository.getInstance(mMainActivityWeakReference.get()).getNewsWhichAreFavorite();
-        else
-            throw new RuntimeException();
-    }
-}
-
-class GetAllNewsAsyncTask extends GetNewsArrAsyncTask {
-    GetAllNewsAsyncTask(MainActivity mainActivity, NewsAdapterOnTaskCompleted onTaskCompleted) {
-        super(mainActivity, onTaskCompleted);
-    }
-
-    @Override
-    protected News[] doInBackground(Void... voids) {
-        MainActivity mainActivity = mMainActivityWeakReference.get();
-        if (mainActivity != null)
-            return NewsRepository.getInstance(mMainActivityWeakReference.get()).getAll();
-        else
-            throw new RuntimeException();
-    }
-}
 
 
 

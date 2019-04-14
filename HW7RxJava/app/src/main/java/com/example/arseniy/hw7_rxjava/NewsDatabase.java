@@ -3,6 +3,7 @@ package com.example.arseniy.hw7_rxjava;
 import android.content.Context;
 
 import java.util.Date;
+import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +18,9 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverter;
 import androidx.room.TypeConverters;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
+import io.reactivex.Single;
 
 import static androidx.room.OnConflictStrategy.REPLACE;
 
@@ -62,11 +66,11 @@ class Converters {
 interface NewsDao {
     @Nullable
     @Query("SELECT * FROM news WHERE title=:titleToSelect")
-    News getNewsByTitle(String titleToSelect);
+    Maybe<News> getNewsByTitle(String titleToSelect);
 
     @Nullable
     @Query("SELECT * FROM news WHERE id=:id")
-    News getNewsById(int id);
+    Maybe<News> getNewsById(int id);
 
     @Insert(onConflict = REPLACE)
     void insert(News news);
@@ -81,10 +85,10 @@ interface NewsDao {
     void delete(News news);
 
     @Query("SELECT * FROM news ")
-    News[] getAllNews();
+    Single<List<News>> getAllNews();
 
     @Query("SELECT * FROM news, favnews WHERE news.id=favnews.id")
-    News[] getNewsWhichAreFavorite();
+    Single<List<News>> getNewsWhichAreFavorite();
 
     @Query("DELETE FROM news")
     void deleteAll();
@@ -111,7 +115,7 @@ class FavNews {
 interface FavNewsDao {
     @Nullable
     @Query("SELECT * FROM favnews WHERE id=:id")
-    FavNews getFavNewsById(int id);
+    Maybe<FavNews> getFavNewsById(int id);
 
     @Insert(onConflict = REPLACE)
     void insert(FavNews favnews);
@@ -123,7 +127,7 @@ interface FavNewsDao {
     void delete(FavNews favnews);
 
     @Query("SELECT * FROM favnews ")
-    FavNews[] getAllFavNews();
+    Single<List<FavNews>> getAllFavNews();
 }
 
 

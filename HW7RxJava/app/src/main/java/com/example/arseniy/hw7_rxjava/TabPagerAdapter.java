@@ -5,10 +5,14 @@ import android.os.AsyncTask;
 import android.view.ViewGroup;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.recyclerview.widget.RecyclerView;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.schedulers.Schedulers;
 
 public class TabPagerAdapter extends FragmentPagerAdapter {
     private String tabTitles[];
@@ -29,10 +33,10 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
 
     @Override public NewsListFragment getItem(int position) {
         NewsListFragment f;
-        NewsRepository repo = NewsRepository.getInstance(mContext);
+
         switch (position) {
             case RECENTS_PAGE_POSITION:
-                new PopulateDBAsyncTask(repo, mContext).execute();
+                rxPopulateDB();
                 f = NewsListFragment.newInstance(MAIN_FLAG);
                 break;
             case FAVORITES_PAGE_POSITION:
@@ -47,24 +51,19 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
     @Override public CharSequence getPageTitle(int position) {
         return tabTitles[position];
     }
-}
 
-class PopulateDBAsyncTask extends AsyncTask<Integer, Void, Void> {
-    private NewsRepository mRepository;
-    private WeakReference<Context> mContext;
-
-    PopulateDBAsyncTask(NewsRepository repository, Context context) {
-        mRepository = repository;
-        mContext = new WeakReference<>(context);
-    }
-
-    @Override
-    protected Void doInBackground(Integer... integers) {
-        mRepository.removeAll();
-        Context context = mContext.get();
-        if (context != null)
-            mRepository.add(Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext.get()));
-        return null;
+    private void rxPopulateDB() {
+        NewsRepository repo = NewsRepository.getInstance(mContext);
+        ArrayList<News> news = Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext);
+        Single.just(news)
+                .observeOn(Schedulers.io())
+                .subscribe(value -> {
+                    repo.removeAll();
+                    repo.add(value);
+                });
     }
 }
+
+
+
 
