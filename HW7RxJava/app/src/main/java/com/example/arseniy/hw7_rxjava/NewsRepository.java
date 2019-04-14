@@ -53,7 +53,7 @@ public class NewsRepository{
         return mNewsDao.getNewsById(id);
     }
 
-    Single<List<News>> getAll() {
+    Flowable<List<News>> getAll() {
         return mNewsDao.getAllNews();
     }
 

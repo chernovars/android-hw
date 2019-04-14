@@ -20,7 +20,7 @@ interface NewsActivityOnTaskCompleted {
     void onAddFavoriteSuccess();
 }
 
-public class NewsActivity extends AppCompatActivity implements NewsActivityOnTaskCompleted {
+public class NewsActivity extends AppCompatActivity{
     TextView mNewsTitle;
     TextView mNewsDesc;
     TextView mNewsDate;
@@ -71,19 +71,11 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
                 .subscribe(this::onTaskCompleted);
     }
 
-    @Override
     public void onTaskCompleted(News news) {
         mNewsDate.setText(Utils.customFormatDate(news.date));
         mNewsDesc.setText(news.fullDesc);
     }
 
-    @Override
-    public void onTaskCompleted(Boolean res) {
-        if (mToggleFavorite != null) {
-            mIsFavorite = res;
-            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-        }
-    }
 
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
@@ -97,8 +89,6 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
         mToggleFavorite = menu.findItem(R.id.toggle_favorite);
 
         mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-
-        final NewsActivityOnTaskCompleted newsActivity = this;
 
         mToggleFavorite.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
@@ -118,7 +108,14 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
         NewsRepository.getInstance(this).isFavorite(newsId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onTaskCompleted);
+                .subscribe(this::updateIsFavoriteResult);
+    }
+
+    public void updateIsFavoriteResult(Boolean res) {
+        if (mToggleFavorite != null) {
+            mIsFavorite = res;
+            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
+        }
     }
 
     private void rxSetIsFavorite(int newsId, boolean isNowFavorite) {
@@ -142,7 +139,6 @@ public class NewsActivity extends AppCompatActivity implements NewsActivityOnTas
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
     }
 
-    @Override
     public void onAddFavoriteSuccess() {
         Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
     }

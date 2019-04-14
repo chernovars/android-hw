@@ -85,7 +85,7 @@ interface NewsDao {
     void delete(News news);
 
     @Query("SELECT * FROM news ")
-    Single<List<News>> getAllNews();
+    Flowable<List<News>> getAllNews();
 
     @Query("SELECT * FROM news, favnews WHERE news.id=favnews.id")
     Single<List<News>> getNewsWhichAreFavorite();
