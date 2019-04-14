@@ -62,7 +62,7 @@ public class NewsRepository{
     }
 
     Single<Boolean> isFavorite(int id) {
-        return mFavNewsDao.getFavNewsById(id).isEmpty();
+        return mFavNewsDao.getFavNewsById(id).isEmpty().map(bool -> !bool);
     }
 
     void addFavorite(int id) {

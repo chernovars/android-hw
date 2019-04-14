@@ -17,10 +17,6 @@ import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
-interface NewsAdapterOnTaskCompleted{
-    void onTaskCompleted(News [] news);
-}
-
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;
     private static final int NEWS_VIEWHOLDER_TYPE = 101;
