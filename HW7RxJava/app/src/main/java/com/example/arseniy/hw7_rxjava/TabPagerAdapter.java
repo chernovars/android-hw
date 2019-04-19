@@ -36,7 +36,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
 
         switch (position) {
             case RECENTS_PAGE_POSITION:
-                rxPopulateDB();
+                NewsRepository.getInstance(mContext).rxPopulateDB(mContext);
                 f = NewsListFragment.newInstance(MAIN_FLAG);
                 break;
             case FAVORITES_PAGE_POSITION:
@@ -50,17 +50,6 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
 
     @Override public CharSequence getPageTitle(int position) {
         return tabTitles[position];
-    }
-
-    private void rxPopulateDB() {
-        NewsRepository repo = NewsRepository.getInstance(mContext);
-        ArrayList<News> news = Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, mContext);
-        Single.just(news)
-                .observeOn(Schedulers.io())
-                .subscribe(value -> {
-                    repo.removeAll();
-                    repo.add(value);
-                });
     }
 }
 

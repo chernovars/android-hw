@@ -1,5 +1,6 @@
 package com.example.arseniy.hw7_rxjava;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.view.LayoutInflater;
@@ -30,22 +31,17 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     NewsListAdapter(@NonNull MainActivity context, boolean onlyFavorites) {
         mContext = context;
         mOnlyFavorites = onlyFavorites;
+
         if (!onlyFavorites) {
             //заполняем адаптер для RecyclerView новостями из таблицы новостей
-            rxGetAllNews();
+            //rxGetAllNews();
+            NewsRepository.getInstance(mContext).rxGetAllNews(this::adaptNewsToDataset);
         }
         else {
             //заполняем адаптер для RecyclerView новостями из базы, заголовки которых есть в таблице избранных
             updateFavorites();
         }
         this.notifyDataSetChanged();
-    }
-
-    private void rxGetAllNews() {
-       NewsRepository.getInstance(mContext).getAll()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::adaptNewsToDataset);
     }
 
     void setmContext(@NonNull MainActivity activity) {
@@ -70,17 +66,11 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void updateFavorites() {
         if (mOnlyFavorites)
-            rxGetFavorites();
+            NewsRepository.getInstance(mContext).rxGetFavorites(this::adaptNewsToDataset);
         else
             throw new RuntimeException("This method should be called only for favorites tabs");
     }
 
-    private void rxGetFavorites() {
-        NewsRepository.getInstance(mContext).getNewsWhichAreFavorite()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::adaptNewsToDataset);
-    }
 
     @Override
     public int getItemViewType(int position) {

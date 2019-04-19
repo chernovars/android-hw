@@ -9,16 +9,6 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-
-interface NewsActivityOnTaskCompleted {
-    void onTaskCompleted(Boolean res);
-    void onTaskCompleted(News news);
-    void onAddFavoriteSuccess();
-}
 
 public class NewsActivity extends AppCompatActivity{
     TextView mNewsTitle;
@@ -50,7 +40,7 @@ public class NewsActivity extends AppCompatActivity{
             mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            rxGetNews(mNewsId);
+            NewsRepository.getInstance(this).rxGetNews(mNewsId, this::newsToView);
 
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
@@ -64,18 +54,10 @@ public class NewsActivity extends AppCompatActivity{
         }
     }
 
-    void rxGetNews(int id) {
-        NewsRepository.getInstance(this).get(id)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onTaskCompleted);
-    }
-
-    public void onTaskCompleted(News news) {
+    public void newsToView(News news) {
         mNewsDate.setText(Utils.customFormatDate(news.date));
         mNewsDesc.setText(news.fullDesc);
     }
-
 
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
@@ -90,48 +72,31 @@ public class NewsActivity extends AppCompatActivity{
 
         mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
 
+        NewsActivity activity = this;
         mToggleFavorite.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 mIsFavorite = !mIsFavorite;
                 mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-                rxSetIsFavorite(mNewsId, mIsFavorite);
+                NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess);
                 return true;
             }
         });
 
-        rxCheckIsFavorite(mNewsId);
+        NewsRepository.getInstance(this).rxPollIsFavorite(mNewsId, this::setIconOnIsFavoriteResult);
         return true;
     }
 
-    private void rxCheckIsFavorite(int newsId) {
-        NewsRepository.getInstance(this).isFavorite(newsId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::updateIsFavoriteResult);
+    public void onAddFavoriteSuccess() {
+        Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
     }
 
-    public void updateIsFavoriteResult(Boolean res) {
+    public void setIconOnIsFavoriteResult(Boolean res) {
         if (mToggleFavorite != null) {
             mIsFavorite = res;
             mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
         }
     }
-
-    private void rxSetIsFavorite(int newsId, boolean isNowFavorite) {
-        if (isNowFavorite)
-            Single.just(newsId)
-                    .doOnSuccess(value -> NewsRepository.getInstance(this).addFavorite(value))
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess(value -> onAddFavoriteSuccess())
-                    .subscribe();
-        else
-            Single.just(newsId)
-                    .observeOn(Schedulers.io())
-                    .subscribe(NewsRepository.getInstance(this)::removeFavorite);
-    }
-
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -139,9 +104,7 @@ public class NewsActivity extends AppCompatActivity{
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
     }
 
-    public void onAddFavoriteSuccess() {
-        Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();
-    }
+
 }
 
 

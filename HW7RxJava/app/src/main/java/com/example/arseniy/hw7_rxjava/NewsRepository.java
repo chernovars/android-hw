@@ -2,11 +2,17 @@ package com.example.arseniy.hw7_rxjava;
 
 import android.content.Context;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 public class NewsRepository{
     private NewsDao mNewsDao;
@@ -82,5 +88,58 @@ public class NewsRepository{
 
     void setFavoritesAdapter(NewsListAdapter favoritesAdapter) {
         this.favoritesAdapter = favoritesAdapter;
+    }
+
+    void rxGetNews(int id, Consumer<News> consumer) {
+        this.get(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(consumer::accept);
+    }
+
+    void rxGetAllNews(Consumer<List<News>> consumer) {
+        this.getAll()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(consumer::accept);
+    }
+
+    void rxGetFavorites(Consumer<List<News>> consumer) {
+        this.getNewsWhichAreFavorite()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(consumer::accept);
+    }
+
+    void rxPopulateDB(Context context) {
+        ArrayList<News> news = Utils.generateNews(NewsListFragment.MOCK_NEWS_COUNT, context);
+        Single.just(news)
+                .observeOn(Schedulers.io())
+                .subscribe(value -> {
+                    this.removeAll();
+                    this.add(value);
+                });
+    }
+
+    void rxPollIsFavorite(int newsId, Consumer<Boolean> consumeIsFavorite) {
+        this.isFavorite(newsId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(consumeIsFavorite::accept);
+    }
+
+    void rxSetIsFavorite(int newsId, boolean isNowFavorite, Runnable ifFavoriteResult) {
+        if (isNowFavorite)
+            Single.just(newsId)
+                    .doOnSuccess(this::addFavorite)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess(value -> ifFavoriteResult.run())
+                    .subscribe();
+        else
+            Single.just(newsId)
+                    .doOnSuccess(this::removeFavorite)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe();
     }
 }
