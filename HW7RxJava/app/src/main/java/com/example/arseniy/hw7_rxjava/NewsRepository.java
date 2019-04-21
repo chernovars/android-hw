@@ -20,8 +20,6 @@ public class NewsRepository{
 
     private static volatile NewsRepository instance;
 
-    private NewsListAdapter favoritesAdapter;
-
     static synchronized NewsRepository getInstance(Context context) {
         if (instance == null) {
             instance = new NewsRepository(context);
@@ -75,19 +73,10 @@ public class NewsRepository{
         FavNews fav = new FavNews();
         fav.id = id;
         mFavNewsDao.insert(fav);
-        if (favoritesAdapter != null) {
-            favoritesAdapter.updateFavorites();
-        }
     }
 
     void removeFavorite(int id) {
         mFavNewsDao.deleteById(id);
-        if (favoritesAdapter != null)
-            favoritesAdapter.updateFavorites();
-    }
-
-    void setFavoritesAdapter(NewsListAdapter favoritesAdapter) {
-        this.favoritesAdapter = favoritesAdapter;
     }
 
     void rxGetNews(int id, Consumer<News> consumer) {

@@ -1,6 +1,7 @@
 package com.example.arseniy.hw7_rxjava;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -24,7 +25,9 @@ import static android.widget.LinearLayout.VERTICAL;
 public class NewsListFragment extends Fragment {
     static int MOCK_NEWS_COUNT = 20;
     private NewsListAdapter mAdapter;
+    private static NewsListAdapter mFavoritesAdapter; // тут статик, чтобы в любом фрагменте можно было обновить датасет адаптера избранных при выходе из NewsActivity
     private boolean isMain;
+    static final int NEWS_ACTIVITY_RETURN_KEY = 9788;
 
     static NewsListFragment newInstance(boolean isMain) {
         Bundle args = new Bundle();
@@ -40,18 +43,13 @@ public class NewsListFragment extends Fragment {
         super.onAttach(context);
 
         if (mAdapter == null) {
-            mAdapter = new NewsListAdapter((MainActivity) getActivity(), !isMain);
-            if (!isMain) {
-                // передаем в репозиторий ссылку на адаптер избранных, чтобы он оттуда обновлялся при добавлении/удалении избранных
-                NewsRepository.getInstance(context).setFavoritesAdapter(mAdapter);
-            }
-        }
-        else {
-            // обновляем ссылку на новую активити (при повороте), для избежания утечки старой активити
-            mAdapter.setmContext((MainActivity) getActivity());
+            mAdapter = new NewsListAdapter(this);
+            if (isMain) NewsRepository.getInstance(context).rxGetAllNews(mAdapter::adaptNewsToDataset);
+            else NewsRepository.getInstance(context).rxGetFavorites(mAdapter::adaptNewsToDataset);
+
+            if (mFavoritesAdapter == null && !isMain) mFavoritesAdapter = mAdapter;
         }
     }
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -63,5 +61,14 @@ public class NewsListFragment extends Fragment {
         recyclerView.setAdapter(mAdapter);
 
         return view;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //Метод нужен, чтобы обновлять адаптер избранных при закрытии активити новости (так как "избранность" могла в течение активити поменяться)
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == NEWS_ACTIVITY_RETURN_KEY){
+            if (mFavoritesAdapter != null) NewsRepository.getInstance(getContext()).rxGetFavorites(mFavoritesAdapter::adaptNewsToDataset);
+        }
     }
 }

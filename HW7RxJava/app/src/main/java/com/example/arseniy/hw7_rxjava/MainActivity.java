@@ -1,11 +1,15 @@
 package com.example.arseniy.hw7_rxjava;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.material.tabs.TabLayout;
+
+import java.util.Observer;
 
 public class MainActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -19,5 +23,6 @@ public class MainActivity extends AppCompatActivity {
         TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), MainActivity.this);
         viewPager.setAdapter(tabPagerAdapter);
     }
+
 }
 

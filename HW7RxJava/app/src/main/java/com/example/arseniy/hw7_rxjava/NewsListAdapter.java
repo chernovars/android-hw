@@ -2,7 +2,6 @@ package com.example.arseniy.hw7_rxjava;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +13,7 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import io.reactivex.Scheduler;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
+
 
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;
@@ -25,30 +22,13 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private static final String STRING_VALUE_EQUALS_FALSE = "227e5c51ccf3d061d3e75215479dfe9b";
 
     private ArrayList<Object> mDataset = new ArrayList<>();
-    private MainActivity mContext;
-    private boolean mOnlyFavorites;
+    private NewsListFragment mHostFragment;
 
-    NewsListAdapter(@NonNull MainActivity context, boolean onlyFavorites) {
-        mContext = context;
-        mOnlyFavorites = onlyFavorites;
-
-        if (!onlyFavorites) {
-            //заполняем адаптер для RecyclerView новостями из таблицы новостей
-            //rxGetAllNews();
-            NewsRepository.getInstance(mContext).rxGetAllNews(this::adaptNewsToDataset);
-        }
-        else {
-            //заполняем адаптер для RecyclerView новостями из базы, заголовки которых есть в таблице избранных
-            updateFavorites();
-        }
-        this.notifyDataSetChanged();
+    NewsListAdapter(@NonNull NewsListFragment hostFragment) {
+        mHostFragment = hostFragment;
     }
 
-    void setmContext(@NonNull MainActivity activity) {
-        mContext = activity;
-    }
-
-    private void adaptNewsToDataset(List<News> newsArr) {
+    void adaptNewsToDataset(List<News> newsArr) {
         //группировка по датам для датасета адаптера
         mDataset.clear();
         CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new Date()); //текущая дата
@@ -63,14 +43,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
         this.notifyDataSetChanged();
     }
-
-    void updateFavorites() {
-        if (mOnlyFavorites)
-            NewsRepository.getInstance(mContext).rxGetFavorites(this::adaptNewsToDataset);
-        else
-            throw new RuntimeException("This method should be called only for favorites tabs");
-    }
-
 
     @Override
     public int getItemViewType(int position) {
@@ -147,10 +119,13 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         @Override
         public void onClick(View v) {
             // запускаем активити для новости
-            Intent intent = new Intent(mContext, NewsActivity.class);
-            intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, mTitle.getText());
-            intent.putExtra(NewsActivity.NEWS_ID_EXTRA, mId);
-            mContext.startActivity(intent);
+            Context context = mHostFragment.getContext();
+            if (context != null) {
+                Intent intent = new Intent(context, NewsActivity.class);
+                intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, mTitle.getText());
+                intent.putExtra(NewsActivity.NEWS_ID_EXTRA, mId);
+                mHostFragment.startActivityForResult(intent, NewsListFragment.NEWS_ACTIVITY_RETURN_KEY);
+            }
         }
     }
 

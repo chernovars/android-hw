@@ -79,6 +79,7 @@ public class NewsActivity extends AppCompatActivity{
                 mIsFavorite = !mIsFavorite;
                 mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
                 NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess);
+
                 return true;
             }
         });
