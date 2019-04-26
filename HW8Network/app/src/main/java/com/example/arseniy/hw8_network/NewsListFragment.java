@@ -2,25 +2,17 @@ package com.example.arseniy.hw8_network;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-
 import androidx.annotation.NonNull;
-import androidx.core.util.Pair;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import static android.widget.LinearLayout.VERTICAL;
+import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
 public class NewsListFragment extends Fragment {
     static int MOCK_NEWS_COUNT = 20;

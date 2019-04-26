@@ -14,6 +14,8 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.arseniy.hw8_network.persistence.News;
+
 
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;

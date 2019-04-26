@@ -4,22 +4,21 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import androidx.annotation.MainThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.retrofit.MsDate;
 
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Random;
 
-class Utils {
+public class Utils {
     private static DateFormatSymbols myDateFormatSymbols = new DateFormatSymbols(){
         @Override
         public String[] getMonths() {
@@ -47,7 +46,7 @@ class Utils {
        return res;
     }
 
-    static Date fromMillisToDate(long millis) {
+    public static Date fromMillisToDate(long millis) {
         calendar.setTimeInMillis(millis);
 
         int mYear = calendar.get(Calendar.YEAR);
@@ -103,7 +102,7 @@ class Utils {
         return news;
     }
 
-    static String removeHtmlFromString(String html) {
+    public static String removeHtmlFromString(String html) {
         html = html.replaceAll("<(.*?)>"," ");
         html = html.replaceAll("<(.*?)\n"," ");
         html = html.replaceFirst("(.*?)>", " ");
@@ -115,7 +114,7 @@ class Utils {
         return html;
     }
 
-    static int compareMsDates(MsDate o1, MsDate o2) {
+    public static int compareMsDates(MsDate o1, MsDate o2) {
         long diff = o1.getMilliseconds() -
                 o2.getMilliseconds();
         diff = diff / 60000;

@@ -1,18 +1,11 @@
 package com.example.arseniy.hw8_network;
 
 import android.content.Context;
-import android.os.AsyncTask;
-import android.view.ViewGroup;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.recyclerview.widget.RecyclerView;
-import io.reactivex.Scheduler;
-import io.reactivex.Single;
-import io.reactivex.schedulers.Schedulers;
+
+import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
 public class TabPagerAdapter extends FragmentPagerAdapter {
     private String tabTitles[];

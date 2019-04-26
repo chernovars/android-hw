@@ -10,6 +10,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.arseniy.hw8_network.persistence.News;
+import com.example.arseniy.hw8_network.persistence.NewsRepository;
+
 public class NewsActivity extends AppCompatActivity{
     TextView mNewsTitle;
     TextView mNewsDesc;

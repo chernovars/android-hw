@@ -1,7 +1,8 @@
-package com.example.arseniy.hw8_network;
+package com.example.arseniy.hw8_network.persistence;
 
 import android.content.Context;
 
+import com.example.arseniy.hw8_network.Utils;
 import com.example.arseniy.hw8_network.retrofit.Client;
 import com.example.arseniy.hw8_network.retrofit.NewsListPayload;
 import com.example.arseniy.hw8_network.retrofit.NewsListResponse;
@@ -23,7 +24,7 @@ public class NewsRepository {
     private static int millisecondsInMinute = 1000 * 60;
     private static volatile NewsRepository instance;
 
-    static synchronized NewsRepository getInstance(Context context) {
+    public static synchronized NewsRepository getInstance(Context context) {
         if (instance == null) {
             instance = new NewsRepository(context);
         }
@@ -106,7 +107,7 @@ public class NewsRepository {
         return news;
     }
 
-    void rxDownloadNewsContent(int id, Consumer<String> consumer) {
+    public void rxDownloadNewsContent(int id, Consumer<String> consumer) {
         Client.getInstance().getApi().getNewsContentResponse(id)
                 .map(newsContentResponse -> newsContentResponse.getNewsListPayload().getContent())
                 .map(Utils::removeHtmlFromString)
@@ -115,28 +116,28 @@ public class NewsRepository {
                 .subscribe(consumer::accept);
     }
 
-    void rxGetNews(int id, Consumer<News> consumer) {
+    public void rxGetNews(int id, Consumer<News> consumer) {
         this.get(id)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(consumer::accept);
     }
 
-    void rxGetAllNews(Consumer<List<News>> consumer) {
+    public void rxGetAllNews(Consumer<List<News>> consumer) {
         this.getAll()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(consumer::accept);
     }
 
-    void rxGetFavorites(Consumer<List<News>> consumer) {
+    public void rxGetFavorites(Consumer<List<News>> consumer) {
         this.getNewsWhichAreFavorite()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(consumer::accept);
     }
 
-    void rxPopulateDBFromAPI(Context context) {
+    public void rxPopulateDBFromAPI(Context context) {
         this.rxDownloadNewsListPayload()
                 .observeOn(Schedulers.io())
                 .subscribe(value -> {
@@ -145,7 +146,7 @@ public class NewsRepository {
                 });
     }
 
-    void rxPollIsFavorite(int newsId, Consumer<Boolean> consumeIsFavorite) {
+    public void rxPollIsFavorite(int newsId, Consumer<Boolean> consumeIsFavorite) {
         this.isFavorite(newsId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -153,7 +154,7 @@ public class NewsRepository {
     }
 
 
-    void rxSetIsFavorite(int newsId, boolean isNowFavorite, Runnable ifFavoriteResult) {
+    public void rxSetIsFavorite(int newsId, boolean isNowFavorite, Runnable ifFavoriteResult) {
         if (isNowFavorite)
             Single.just(newsId)
                     .doOnSuccess(this::addFavorite)
