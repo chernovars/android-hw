@@ -8,4 +8,7 @@
     <string name="news_title_default">Название новости</string>
     <string name="news_full_desc_default">Полный текст новости</string>
     <string name="toast_added_to_favorites">Новость добавлена в избранное</string>
+    <string name="ok_button">ОК</string>
+    <string name="no_internet">Нет доступа к интернету</string>
+    <string name="ok_to_exit_promt">Нажмите \"ОК\" для выхода.</string>
 </resources>

@@ -1,6 +1,6 @@
 package com.example.arseniy.hw8_network.retrofit;
 
-public class Date
+public class MsDate
 {
     private long milliseconds;
 

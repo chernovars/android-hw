@@ -1,11 +1,15 @@
 package com.example.arseniy.hw8_network.retrofit;
 
+import com.google.gson.annotations.SerializedName;
+
 public class NewsContentPayload {
     private NewsContentTitle title;
 
-    private Date creationDate;
+    @SerializedName("creationDate")
+    private MsDate creationMsDate;
 
-    private Date lastModificationDate;
+    @SerializedName("lastModificationDate")
+    private MsDate lastModificationMsDate;
 
     private String content;
 
@@ -19,17 +23,17 @@ public class NewsContentPayload {
     public NewsContentTitle getTitle(){
         return this.title;
     }
-    public void setCreationDate(Date creationDate){
-        this.creationDate = creationDate;
+    public void setCreationMsDate(MsDate creationMsDate){
+        this.creationMsDate = creationMsDate;
     }
-    public Date getCreationDate(){
-        return this.creationDate;
+    public MsDate getCreationMsDate(){
+        return this.creationMsDate;
     }
-    public void setLastModificationDate(Date lastModificationDate){
-        this.lastModificationDate = lastModificationDate;
+    public void setLastModificationMsDate(MsDate lastModificationMsDate){
+        this.lastModificationMsDate = lastModificationMsDate;
     }
-    public Date getLastModificationDate(){
-        return this.lastModificationDate;
+    public MsDate getLastModificationMsDate(){
+        return this.lastModificationMsDate;
     }
     public void setContent(String content){
         this.content = content;

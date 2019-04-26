@@ -31,7 +31,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     void adaptNewsToDataset(List<News> newsArr) {
         //группировка по датам для датасета адаптера
         mDataset.clear();
-        CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new Date()); //текущая дата
+        CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new MsDate()); //текущая дата
         CharSequence curDateStr;
         for (News news : newsArr) {
             curDateStr = Utils.customFormatDate(news.date);

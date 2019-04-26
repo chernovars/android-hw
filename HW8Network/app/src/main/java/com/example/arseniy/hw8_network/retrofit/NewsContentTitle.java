@@ -1,5 +1,7 @@
 package com.example.arseniy.hw8_network.retrofit;
 
+import com.google.gson.annotations.SerializedName;
+
 public class NewsContentTitle {
     private String id;
 
@@ -7,7 +9,8 @@ public class NewsContentTitle {
 
     private String text;
 
-    private Date publicationDate;
+    @SerializedName("publicationDate")
+    private MsDate publicationMsDate;
 
     private int bankInfoTypeId;
 
@@ -29,11 +32,11 @@ public class NewsContentTitle {
     public String getText(){
         return this.text;
     }
-    public void setPublicationDate(Date publicationDate){
-        this.publicationDate = publicationDate;
+    public void setPublicationMsDate(MsDate publicationMsDate){
+        this.publicationMsDate = publicationMsDate;
     }
-    public Date getPublicationDate(){
-        return this.publicationDate;
+    public MsDate getPublicationMsDate(){
+        return this.publicationMsDate;
     }
     public void setBankInfoTypeId(int bankInfoTypeId){
         this.bankInfoTypeId = bankInfoTypeId;

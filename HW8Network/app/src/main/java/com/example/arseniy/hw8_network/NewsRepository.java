@@ -6,24 +6,21 @@ import com.example.arseniy.hw8_network.retrofit.Client;
 import com.example.arseniy.hw8_network.retrofit.NewsListPayload;
 import com.example.arseniy.hw8_network.retrofit.NewsListResponse;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
-import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class NewsRepository{
+public class NewsRepository {
     private NewsDao mNewsDao;
     private FavNewsDao mFavNewsDao;
-
+    private static int millisecondsInMinute = 1000 * 60;
     private static volatile NewsRepository instance;
 
     static synchronized NewsRepository getInstance(Context context) {
@@ -64,7 +61,7 @@ public class NewsRepository{
     }
 
     Flowable<List<News>> getAll() {
-        return mNewsDao.getAllNews();
+        return mNewsDao.getAllNewsFreshFirst();
     }
 
     Single<List<News>> getNewsWhichAreFavorite() {
@@ -86,29 +83,36 @@ public class NewsRepository{
     }
 
     Single<List<News>> rxDownloadNewsListPayload() {
-         return Client.getInstance().getApi().getNewsListResponse()
-                 .map(NewsListResponse::getNewsListPayload)
-                 .flatMapIterable(list -> list)
-                 .map(this::newsListPayloadToNews)
-                 .toList();
-    }
-
-    void rxDownloadNewsContent(int id, Consumer<String> consumer) {
-        Client.getInstance().getApi().getNewsContentResponse(id)
-                .map(newsContentResponse -> newsContentResponse.getNewsListPayload().getContent())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+        return Client.getInstance().getApi().getNewsListResponse()
+                .map(NewsListResponse::getNewsListPayload)
+                .map(unsorted -> {
+                    Collections.sort(unsorted, (o1, o2) ->
+                        Utils.compareMsDates(o1.getPublicationMsDate(), o2.getPublicationMsDate()));
+                    return unsorted;
+                    })
+                .flatMapIterable(list -> list)
+                .doOnNext(value -> value.setText(Utils.removeHtmlFromString(value.getText())))
+                .map(this::newsListPayloadToNews)
+                .toList();
     }
 
     private News newsListPayloadToNews(NewsListPayload newsListPayload) {
         News news = new News();
         news.title = newsListPayload.getText();
-        news.date = Utils.fromMillisToDate(newsListPayload.getPublicationDate().getMilliseconds());
+        news.date = Utils.fromMillisToDate(newsListPayload.getPublicationMsDate().getMilliseconds());
         news.id = Integer.parseInt(newsListPayload.getId());
         news.fullDesc = "";
         news.shortDesc = "";
         return news;
+    }
+
+    void rxDownloadNewsContent(int id, Consumer<String> consumer) {
+        Client.getInstance().getApi().getNewsContentResponse(id)
+                .map(newsContentResponse -> newsContentResponse.getNewsListPayload().getContent())
+                .map(Utils::removeHtmlFromString)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(consumer::accept);
     }
 
     void rxGetNews(int id, Consumer<News> consumer) {

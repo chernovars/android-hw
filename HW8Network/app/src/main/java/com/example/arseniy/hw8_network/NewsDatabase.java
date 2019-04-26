@@ -24,7 +24,7 @@ import io.reactivex.Single;
 
 import static androidx.room.OnConflictStrategy.REPLACE;
 
-@Database(entities = {News.class, FavNews.class}, version = 3)
+@Database(entities = {News.class, FavNews.class}, version = 5)
 @TypeConverters({Converters.class})
 public abstract class NewsDatabase extends RoomDatabase {
     private static final String DB_NAME = "news_database.db";
@@ -84,8 +84,8 @@ interface NewsDao {
     @Delete
     void delete(News news);
 
-    @Query("SELECT * FROM news ")
-    Flowable<List<News>> getAllNews();
+    @Query("SELECT * FROM news ORDER BY date DESC")
+    Flowable<List<News>> getAllNewsFreshFirst();
 
     @Query("SELECT * FROM news, favnews WHERE news.id=favnews.id")
     Single<List<News>> getNewsWhichAreFavorite();

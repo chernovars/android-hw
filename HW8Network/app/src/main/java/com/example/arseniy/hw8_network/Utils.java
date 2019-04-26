@@ -1,11 +1,20 @@
 package com.example.arseniy.hw8_network;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
+import androidx.annotation.MainThread;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.arseniy.hw8_network.retrofit.MsDate;
 
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Random;
@@ -92,6 +101,40 @@ class Utils {
             news.add(n);
         }
         return news;
+    }
+
+    static String removeHtmlFromString(String html) {
+        html = html.replaceAll("<(.*?)>"," ");
+        html = html.replaceAll("<(.*?)\n"," ");
+        html = html.replaceFirst("(.*?)>", " ");
+        html = html.replaceAll("&nbsp;"," ");
+        html = html.replaceAll("&amp;"," ");
+        html = html.replaceAll( "&laquo;", "\"");
+        html = html.replaceAll( "&raquo;", "\"");
+        html = html.replaceAll( "&(.*?);", "");
+        return html;
+    }
+
+    static int compareMsDates(MsDate o1, MsDate o2) {
+        long diff = o1.getMilliseconds() -
+                o2.getMilliseconds();
+        diff = diff / 60000;
+        int res = -Math.toIntExact(diff) ;
+        return res;
+    }
+
+    public static boolean isConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netinfo = cm.getActiveNetworkInfo();
+        return netinfo != null;
+    }
+
+    public static void showExitDialog(AppCompatActivity activity) {
+        new AlertDialog.Builder(activity)
+                .setTitle(activity.getString(R.string.no_internet))
+                .setMessage(activity.getString(R.string.ok_to_exit_promt))
+                .setPositiveButton(activity.getString(R.string.ok_button), (dialog, which) -> activity.finish())
+                .show();
     }
 }
 
