@@ -7,26 +7,29 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.text.HtmlCompat;
 
 import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
+import org.w3c.dom.Text;
+
 public class NewsActivity extends AppCompatActivity{
-    TextView mNewsTitle;
-    TextView mNewsDesc;
-    TextView mNewsDate;
-    MenuItem mToggleFavorite;
-    boolean mIsFavorite;
-    int starIconsIDs[] = {R.drawable.btn_rating_star_off_normal, R.drawable.btn_rating_star_off_pressed};
+    private TextView mNewsTitle;
+    private TextView mNewsDesc;
+    private TextView mNewsDate;
+    private MenuItem mToggleFavorite;
+    private boolean mIsFavorite;
+    private int[] starIconsIDs = {R.drawable.btn_rating_star_off_normal, R.drawable.btn_rating_star_off_pressed};
 
     static final String NEWS_ID_EXTRA = "news_id_extra";
     static final String NEWS_TITLE_EXTRA = "news_title_extra";
     static final String NEWS_IS_FAVORITE_EXTRA = "news_is_favorite_extra";
 
-    int mNewsId;
-    String mTitle;
+    private int mNewsId;
+    private String mTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,33 +46,25 @@ public class NewsActivity extends AppCompatActivity{
             mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            NewsRepository.getInstance(this).rxGetNews(mNewsId, this::newsToView);
+            NewsRepository.getInstance(this).rxGetNews(mNewsId, this::pullFullDesc);
 
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
             else
                 mIsFavorite = false;
-
-
-
-        } else {
-            //сюда не должны заходить (обычно)
-            mNewsTitle.setText(getString(R.string.mock_news_title));
-            mNewsDesc.setText(getString(R.string.mock_news_full_desc));
         }
     }
 
-    public void newsToView(News news) {
+    public void pullFullDesc(News news) {
         mNewsDate.setText(Utils.customFormatDate(news.date));
-        mNewsDesc.setText(news.fullDesc);
+        if (news.fullDesc.isEmpty() && Utils.isConnected(this))
+            NewsRepository.getInstance(this).rxPullNewsText(mNewsId, text -> setTextAsHtml(mNewsDesc, text));
+        else
+            setTextAsHtml(mNewsDesc, news.fullDesc);
     }
 
-
-
-    @Override
-    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        NewsRepository.getInstance(this).rxDownloadNewsContent(mNewsId, mNewsDesc::setText);
+    private void setTextAsHtml(TextView view, String text) {
+        view.setText(HtmlCompat.fromHtml(text, HtmlCompat.FROM_HTML_MODE_LEGACY));
     }
 
     @Override
@@ -81,15 +76,12 @@ public class NewsActivity extends AppCompatActivity{
         mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
 
         NewsActivity activity = this;
-        mToggleFavorite.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                mIsFavorite = !mIsFavorite;
-                mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-                NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess);
+        mToggleFavorite.setOnMenuItemClickListener(item -> {
+            mIsFavorite = !mIsFavorite;
+            mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
+            NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess);
 
-                return true;
-            }
+            return true;
         });
 
         NewsRepository.getInstance(this).rxPollIsFavorite(mNewsId, this::setIconOnIsFavoriteResult);
@@ -108,7 +100,7 @@ public class NewsActivity extends AppCompatActivity{
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
     }

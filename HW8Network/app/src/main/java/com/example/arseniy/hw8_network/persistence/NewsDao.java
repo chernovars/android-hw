@@ -5,13 +5,16 @@ import java.util.List;
 import androidx.annotation.Nullable;
 import androidx.room.Dao;
 import androidx.room.Delete;
+import androidx.room.Ignore;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 
+import static androidx.room.OnConflictStrategy.IGNORE;
 import static androidx.room.OnConflictStrategy.REPLACE;
 
 @Dao
@@ -24,10 +27,13 @@ interface NewsDao {
     @Query("SELECT * FROM news WHERE id=:id")
     Maybe<News> getNewsById(int id);
 
-    @Insert(onConflict = REPLACE)
+    @Insert(onConflict = IGNORE)
     void insert(News news);
 
-    @Insert
+    @Query("UPDATE news SET fullDesc=:text WHERE id=:id")
+    void updateText(int id, String text);
+
+    @Insert(onConflict = IGNORE)
     void insert(Iterable<News> news);
 
     @Query("DELETE FROM news WHERE title=:titleToDelete")
@@ -44,6 +50,9 @@ interface NewsDao {
 
     @Query("DELETE FROM news")
     void deleteAll();
+
+    @Query("DELETE FROM news WHERE id NOT IN (SELECT id FROM news ORDER BY date DESC LIMIT :howMany)")
+    void deleteOldest(int howMany);
 }
 
 

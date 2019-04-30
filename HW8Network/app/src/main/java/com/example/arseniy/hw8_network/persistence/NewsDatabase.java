@@ -5,11 +5,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
-
-
-import static androidx.room.OnConflictStrategy.REPLACE;
-
-@Database(entities = {News.class, FavNews.class}, version = 5)
+@Database(entities = {News.class, FavNews.class}, version = 7)
 @TypeConverters({Converters.class})
 public abstract class NewsDatabase extends RoomDatabase {
     private static final String DB_NAME = "news_database.db";

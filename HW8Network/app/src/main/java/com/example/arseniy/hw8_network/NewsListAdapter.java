@@ -1,14 +1,11 @@
 package com.example.arseniy.hw8_network;
 
-import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -16,24 +13,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.arseniy.hw8_network.persistence.News;
 
-
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;
     private static final int NEWS_VIEWHOLDER_TYPE = 101;
 
-    private static final String STRING_VALUE_EQUALS_FALSE = "227e5c51ccf3d061d3e75215479dfe9b";
-
     private ArrayList<Object> mDataset = new ArrayList<>();
-    private NewsListFragment mHostFragment;
 
-    NewsListAdapter(@NonNull NewsListFragment hostFragment) {
-        mHostFragment = hostFragment;
+    private OnNewsViewHolderClickListener onNewsViewHolderClickListener;
+
+    NewsListAdapter(@NonNull OnNewsViewHolderClickListener listener) {
+        onNewsViewHolderClickListener = listener;
     }
 
     void adaptNewsToDataset(List<News> newsArr) {
         //группировка по датам для датасета адаптера
+
         mDataset.clear();
-        CharSequence lastDateStr = STRING_VALUE_EQUALS_FALSE;//Utils.customFormatDate(new MsDate()); //текущая дата
+        CharSequence lastDateStr = "";
         CharSequence curDateStr;
         for (News news : newsArr) {
             curDateStr = Utils.customFormatDate(news.date);
@@ -65,6 +61,10 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             case NEWS_VIEWHOLDER_TYPE: {
                 View itemView = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.viewholder_news, parent, false);
+                itemView.setOnClickListener(v -> {
+                    News news = (News) v.getTag();
+                    onNewsViewHolderClickListener.onNewsItemClick(news);
+                });
                 return new NewsViewHolder(itemView);
             }
             default:
@@ -74,7 +74,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         int viewType = getItemViewType(position);
         switch (viewType) {
             case DATESTR_VIEWHOLDER_TYPE: {
@@ -88,8 +88,7 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 NewsViewHolder newsViewHolder = (NewsViewHolder) holder;
                 newsViewHolder.mTitle.setText(news.title);
                 newsViewHolder.mShortDesc.setText(news.shortDesc);
-                newsViewHolder.mDate = news.date;
-                newsViewHolder.mId = news.id;
+                newsViewHolder.itemView.setTag(news);
                 break;
             }
             default: throw new IllegalArgumentException("unknown viewType=" + viewType);
@@ -105,29 +104,14 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             return 0;
     }
 
-    class NewsViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    class NewsViewHolder extends RecyclerView.ViewHolder {
         TextView mTitle;
         TextView mShortDesc;
-        Date mDate;
-        int mId;
 
         NewsViewHolder(View itemView) {
             super(itemView);
-            itemView.setOnClickListener(this);
             mTitle = itemView.findViewById(R.id.news_title);
             mShortDesc = itemView.findViewById(R.id.news_short_desc);
-        }
-
-        @Override
-        public void onClick(View v) {
-            // запускаем активити для новости
-            Context context = mHostFragment.getContext();
-            if (context != null) {
-                Intent intent = new Intent(context, NewsActivity.class);
-                intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, mTitle.getText());
-                intent.putExtra(NewsActivity.NEWS_ID_EXTRA, mId);
-                mHostFragment.startActivityForResult(intent, NewsListFragment.NEWS_ACTIVITY_RETURN_KEY);
-            }
         }
     }
 

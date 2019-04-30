@@ -5,28 +5,34 @@ import android.content.Context;
 import com.example.arseniy.hw8_network.Utils;
 import com.example.arseniy.hw8_network.retrofit.Client;
 import com.example.arseniy.hw8_network.retrofit.NewsListPayload;
-import com.example.arseniy.hw8_network.retrofit.NewsListResponse;
+import com.example.arseniy.hw8_network.retrofit.TinkoffApiResponse;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class NewsRepository {
     private NewsDao mNewsDao;
     private FavNewsDao mFavNewsDao;
-    private static int millisecondsInMinute = 1000 * 60;
     private static volatile NewsRepository instance;
+    private static int mTopNewsToPreserve = 3;
+    private static CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     public static synchronized NewsRepository getInstance(Context context) {
         if (instance == null) {
             instance = new NewsRepository(context);
+            instance.rxRemoveOldest(mTopNewsToPreserve);
         }
         return instance;
     }
@@ -37,64 +43,54 @@ public class NewsRepository {
         mFavNewsDao = db.getFavNewsDao();
     }
 
-    void add(News item) {
-        mNewsDao.insert(item);
-    }
-
-    void add(Iterable<News> items) {
+    private void add(Iterable<News> items) {
         mNewsDao.insert(items);
     }
 
-    void update(News item) {
-        mNewsDao.insert(item);
+    private void updateText(int id, String text) {
+        mNewsDao.updateText(id, text);
     }
 
-    void remove(News item) {
-        mNewsDao.delete(item);
+    private void removeOldest(int howMany) {
+        mNewsDao.deleteOldest(howMany);
     }
 
-    void removeAll() {
-        mNewsDao.deleteAll();
-    }
-
-    Maybe<News> get(int id) {
+    private Maybe<News> get(int id) {
         return mNewsDao.getNewsById(id);
     }
 
-    Flowable<List<News>> getAll() {
+    private Flowable<List<News>> getAll() {
         return mNewsDao.getAllNewsFreshFirst();
     }
 
-    Single<List<News>> getNewsWhichAreFavorite() {
+    private Single<List<News>> getNewsWhichAreFavorite() {
         return mNewsDao.getNewsWhichAreFavorite();
     }
 
-    Single<Boolean> isFavorite(int id) {
+    private Single<Boolean> isFavorite(int id) {
         return mFavNewsDao.getFavNewsById(id).isEmpty().map(bool -> !bool);
     }
 
-    void addFavorite(int id) {
+    private void addFavorite(int id) {
         FavNews fav = new FavNews();
         fav.id = id;
         mFavNewsDao.insert(fav);
     }
 
-    void removeFavorite(int id) {
+    private void removeFavorite(int id) {
         mFavNewsDao.deleteById(id);
     }
 
-    Single<List<News>> rxDownloadNewsListPayload() {
+    private Single<List<News>> rxDownloadNewsListPayload() {
         return Client.getInstance().getApi().getNewsListResponse()
-                .map(NewsListResponse::getNewsListPayload)
+                .map(TinkoffApiResponse::getPayload)
                 .map(unsorted -> {
                     Collections.sort(unsorted, (o1, o2) ->
                         Utils.compareMsDates(o1.getPublicationMsDate(), o2.getPublicationMsDate()));
                     return unsorted;
                     })
-                .flatMapIterable(list -> list)
-                .doOnNext(value -> value.setText(Utils.removeHtmlFromString(value.getText())))
-                .map(this::newsListPayloadToNews)
-                .toList();
+                .map(list -> list.stream().map(this::newsListPayloadToNews).collect(Collectors.toList()));
+
     }
 
     private News newsListPayloadToNews(NewsListPayload newsListPayload) {
@@ -107,50 +103,49 @@ public class NewsRepository {
         return news;
     }
 
-    public void rxDownloadNewsContent(int id, Consumer<String> consumer) {
-        Client.getInstance().getApi().getNewsContentResponse(id)
-                .map(newsContentResponse -> newsContentResponse.getNewsListPayload().getContent())
-                .map(Utils::removeHtmlFromString)
+    public void rxPullNewsText(int id, Consumer<String> consumer) {
+        compositeDisposable.add(Client.getInstance().getApi().getNewsContentResponse(id)
+                .map(tinkoffApiResponse -> tinkoffApiResponse.getPayload().getContent())
+                .doOnSuccess(value -> updateText(id, value))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .subscribe(consumer::accept));
     }
 
     public void rxGetNews(int id, Consumer<News> consumer) {
-        this.get(id)
+        compositeDisposable.add(this.get(id)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .subscribe(consumer::accept));
     }
 
-    public void rxGetAllNews(Consumer<List<News>> consumer) {
-        this.getAll()
+    public void rxGetAllNews(Consumer<List<News>> consumer, boolean filterEmpty) {
+        compositeDisposable.add(this.getAll()
+                .map(list -> filterEmpty ? list.stream().filter(news -> !news.fullDesc.isEmpty()).collect(Collectors.toList()) : list)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .subscribe(consumer::accept));
     }
 
     public void rxGetFavorites(Consumer<List<News>> consumer) {
-        this.getNewsWhichAreFavorite()
+        compositeDisposable.add(this.getNewsWhichAreFavorite()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .subscribe(consumer::accept));
     }
 
     public void rxPopulateDBFromAPI(Context context) {
-        this.rxDownloadNewsListPayload()
+        //this.removeAll();
+        compositeDisposable.add(this.rxDownloadNewsListPayload()
                 .observeOn(Schedulers.io())
-                .subscribe(value -> {
-                    this.removeAll();
-                    this.add(value);
-                });
+                .subscribe(this::add));
     }
 
     public void rxPollIsFavorite(int newsId, Consumer<Boolean> consumeIsFavorite) {
-        this.isFavorite(newsId)
+        compositeDisposable.add(this.isFavorite(newsId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumeIsFavorite::accept);
+                .subscribe(consumeIsFavorite::accept));
     }
 
 
@@ -167,5 +162,19 @@ public class NewsRepository {
                     .doOnSuccess(this::removeFavorite)
                     .subscribeOn(Schedulers.io())
                     .subscribe();
+    }
+
+    private void rxRemoveOldest(int howMany) {
+        int dummy = 1; //сингл не работает если ничего не вернуть в onSuccess
+        compositeDisposable.add(Single.create(e -> {
+            removeOldest(howMany);
+            e.onSuccess(dummy);
+        })
+                .subscribeOn(Schedulers.io())
+                .subscribe());
+    }
+
+    public void disposeSubscriptions() {
+        compositeDisposable.clear();
     }
 }

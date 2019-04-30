@@ -1,13 +1,11 @@
 package com.example.arseniy.hw8_network;
 
+import android.app.Activity;
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.retrofit.MsDate;
 
 import java.text.DateFormatSymbols;
@@ -36,6 +34,8 @@ public class Utils {
     private static CharSequence todayText = "Сегодня";
     private static CharSequence yesterdayText = "Вчера";
 
+    private static ConnectivityManager connectivityManager;
+
 
     static CharSequence customFormatDate(Date date)   {
        CharSequence res = dateFormat.format(date);
@@ -48,11 +48,6 @@ public class Utils {
 
     public static Date fromMillisToDate(long millis) {
         calendar.setTimeInMillis(millis);
-
-        int mYear = calendar.get(Calendar.YEAR);
-        int mMonth = calendar.get(Calendar.MONTH);
-        int mDay = calendar.get(Calendar.DAY_OF_MONTH);
-
         return calendar.getTime();
     }
 
@@ -72,67 +67,22 @@ public class Utils {
         return datesInRange;
     }
 
-    private static ArrayList<CharSequence> generateMockTitles(int mockNewsCount) {
-        ArrayList<CharSequence> mockData = new ArrayList<>();
-        for (int i = 0; i < mockNewsCount; i++) {
-            mockData.add("Mock " + Integer.toString(i));
-        }
-        return mockData;
-    }
-
-    private static ArrayList<Date> generateMockDates(int mockNewsCount) {
-        return getPreviousDays(mockNewsCount, 1);
-    }
-
-    static ArrayList<News> generateNews(int mockNewsCount, Context context) {
-        ArrayList<News> news = new ArrayList<>();
-        ArrayList<Date> dates = generateMockDates(mockNewsCount);
-        ArrayList<CharSequence> titles = generateMockTitles(mockNewsCount);
-
-        News n;
-        for (int i = 0; i < titles.size(); i++) {
-            n = new News();
-            n.title = titles.get(i).toString();
-            n.date = dates.get(i);
-            n.shortDesc = context.getString(R.string.mock_news_short_desc);
-            n.fullDesc = context.getString(R.string.mock_news_full_desc);
-            n.id = i;
-            news.add(n);
-        }
-        return news;
-    }
-
-    public static String removeHtmlFromString(String html) {
-        html = html.replaceAll("<(.*?)>"," ");
-        html = html.replaceAll("<(.*?)\n"," ");
-        html = html.replaceFirst("(.*?)>", " ");
-        html = html.replaceAll("&nbsp;"," ");
-        html = html.replaceAll("&amp;"," ");
-        html = html.replaceAll( "&laquo;", "\"");
-        html = html.replaceAll( "&raquo;", "\"");
-        html = html.replaceAll( "&(.*?);", "");
-        return html;
-    }
-
     public static int compareMsDates(MsDate o1, MsDate o2) {
-        long diff = o1.getMilliseconds() -
-                o2.getMilliseconds();
+        long diff = o2.getMilliseconds() - o1.getMilliseconds();
         diff = diff / 60000;
-        int res = -Math.toIntExact(diff) ;
-        return res;
+        return Math.toIntExact(diff);
     }
 
-    public static boolean isConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netinfo = cm.getActiveNetworkInfo();
-        return netinfo != null;
+    static boolean isConnected(Context context) {
+        if (connectivityManager == null)
+            connectivityManager= (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getActiveNetworkInfo() != null;
     }
 
-    public static void showExitDialog(AppCompatActivity activity) {
+    static void showWarningDialog(Activity activity) {
         new AlertDialog.Builder(activity)
                 .setTitle(activity.getString(R.string.no_internet))
-                .setMessage(activity.getString(R.string.ok_to_exit_promt))
-                .setPositiveButton(activity.getString(R.string.ok_button), (dialog, which) -> activity.finish())
+                .setMessage(activity.getString(R.string.no_internet_warning_message))
                 .show();
     }
 }
