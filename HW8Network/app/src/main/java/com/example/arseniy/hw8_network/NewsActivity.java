@@ -14,7 +14,7 @@ import androidx.core.text.HtmlCompat;
 import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
-import org.w3c.dom.Text;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class NewsActivity extends AppCompatActivity{
     private TextView mNewsTitle;
@@ -23,6 +23,7 @@ public class NewsActivity extends AppCompatActivity{
     private MenuItem mToggleFavorite;
     private boolean mIsFavorite;
     private int[] starIconsIDs = {R.drawable.btn_rating_star_off_normal, R.drawable.btn_rating_star_off_pressed};
+    private CompositeDisposable mCompositeDisposable;
 
     static final String NEWS_ID_EXTRA = "news_id_extra";
     static final String NEWS_TITLE_EXTRA = "news_title_extra";
@@ -34,6 +35,8 @@ public class NewsActivity extends AppCompatActivity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mCompositeDisposable = new CompositeDisposable();
+
         setContentView(R.layout.activity_news);
 
         mNewsTitle = findViewById(R.id.news_title);
@@ -46,7 +49,7 @@ public class NewsActivity extends AppCompatActivity{
             mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            NewsRepository.getInstance(this).rxGetNews(mNewsId, this::pullFullDesc);
+            mCompositeDisposable.add(NewsRepository.getInstance(this).rxGetNews(mNewsId, this::pullFullDesc));
 
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
@@ -58,7 +61,9 @@ public class NewsActivity extends AppCompatActivity{
     public void pullFullDesc(News news) {
         mNewsDate.setText(Utils.customFormatDate(news.date));
         if (news.fullDesc.isEmpty() && Utils.isConnected(this))
-            NewsRepository.getInstance(this).rxPullNewsText(mNewsId, text -> setTextAsHtml(mNewsDesc, text));
+            mCompositeDisposable.add(
+                    NewsRepository.getInstance(this).rxPullNewsText(mNewsId, text -> setTextAsHtml(mNewsDesc, text))
+            );
         else
             setTextAsHtml(mNewsDesc, news.fullDesc);
     }
@@ -79,12 +84,14 @@ public class NewsActivity extends AppCompatActivity{
         mToggleFavorite.setOnMenuItemClickListener(item -> {
             mIsFavorite = !mIsFavorite;
             mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
-            NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess);
+            mCompositeDisposable.add(
+                    NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess)
+            );
 
             return true;
         });
 
-        NewsRepository.getInstance(this).rxPollIsFavorite(mNewsId, this::setIconOnIsFavoriteResult);
+        mCompositeDisposable.add(NewsRepository.getInstance(this).rxPollIsFavorite(mNewsId, this::setIconOnIsFavoriteResult));
         return true;
     }
 
@@ -105,7 +112,11 @@ public class NewsActivity extends AppCompatActivity{
         outState.putBoolean(NEWS_IS_FAVORITE_EXTRA, mIsFavorite);
     }
 
-
+    @Override
+    protected void onDestroy() {
+        mCompositeDisposable.clear();
+        super.onDestroy();
+    }
 }
 
 

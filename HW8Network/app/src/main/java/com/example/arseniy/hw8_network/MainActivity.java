@@ -2,13 +2,17 @@ package com.example.arseniy.hw8_network;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
-
+import android.app.Application;
 import android.os.Bundle;
 
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 import com.google.android.material.tabs.TabLayout;
 
+import io.reactivex.disposables.CompositeDisposable;
+
 public class MainActivity extends AppCompatActivity {
+    private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -20,14 +24,18 @@ public class MainActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(viewPager);
 
-        TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), getApplication());
+        Application application = getApplication();
+        if (Utils.isConnected(application))
+            mCompositeDisposable.add(NewsRepository.getInstance(application).rxPopulateDBFromAPI());
+
+        TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), application);
         viewPager.setAdapter(tabPagerAdapter);
     }
 
     @Override
     protected void onDestroy() {
+        mCompositeDisposable.clear();
         super.onDestroy();
-        NewsRepository.getInstance(this).disposeSubscriptions();
     }
 }
 
