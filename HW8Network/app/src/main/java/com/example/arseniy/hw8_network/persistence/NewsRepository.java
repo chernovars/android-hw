@@ -117,7 +117,7 @@ public class NewsRepository {
         return this.getAll()
                 .flatMap(list -> filterEmpty ?
                         Flowable.fromIterable(list).filter(news -> !news.fullDesc.isEmpty()).toList().toFlowable() :
-                        Flowable.fromIterable(list))
+                        Flowable.just(list))
                 .cast(List.class)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
