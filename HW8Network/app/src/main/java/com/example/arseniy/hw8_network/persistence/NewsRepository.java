@@ -7,12 +7,10 @@ import com.example.arseniy.hw8_network.retrofit.Client;
 import com.example.arseniy.hw8_network.retrofit.NewsListPayload;
 import com.example.arseniy.hw8_network.retrofit.TinkoffApiResponse;
 
-import java.util.Collections;
 import java.util.List;
-
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
@@ -29,7 +27,7 @@ public class NewsRepository {
     public static synchronized NewsRepository getInstance(Context context) {
         if (instance == null) {
             instance = new NewsRepository(context);
-            instance.rxRemoveOldest(mTopNewsToPreserve);
+            instance.rxDeleteAllExceptNewest(mTopNewsToPreserve);
         }
         return instance;
     }
@@ -48,8 +46,8 @@ public class NewsRepository {
         mNewsDao.updateText(id, text);
     }
 
-    private void removeOldest(int howMany) {
-        mNewsDao.deleteOldest(howMany);
+    private void deleteAllExceptNewest(int howMany) {
+        mNewsDao.deleteAllExceptNewest(howMany);
     }
 
     private Maybe<News> get(int id) {
@@ -81,12 +79,11 @@ public class NewsRepository {
     private Single<List<News>> rxDownloadNewsListPayload() {
         return Client.getInstance().getApi().getNewsListResponse()
                 .map(TinkoffApiResponse::getPayload)
-                .map(unsorted -> {
-                    Collections.sort(unsorted, (o1, o2) ->
-                        Utils.compareMsDates(o1.getPublicationMsDate(), o2.getPublicationMsDate()));
-                    return unsorted;
-                    })
-                .map(list -> list.stream().map(this::newsListPayloadToNews).collect(Collectors.toList()));
+                .flattenAsObservable(list -> list)
+                .toSortedList((o1, o2) -> Utils.compareMsDates(o1.getPublicationMsDate(), o2.getPublicationMsDate()))
+                .flattenAsObservable(list -> list)
+                .map(this::newsListPayloadToNews)
+                .toList();
 
     }
 
@@ -118,11 +115,15 @@ public class NewsRepository {
 
     public Disposable rxGetAllNews(Consumer<List<News>> consumer, boolean filterEmpty) {
         return this.getAll()
-                .map(list -> filterEmpty ? list.stream().filter(news -> !news.fullDesc.isEmpty()).collect(Collectors.toList()) : list)
+                .flatMap(list -> filterEmpty ?
+                        Flowable.fromIterable(list).filter(news -> !news.fullDesc.isEmpty()).toList().toFlowable() :
+                        Flowable.fromIterable(list))
+                .cast(List.class)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(consumer::accept);
     }
+
 
     public Disposable rxGetFavorites(Consumer<List<News>> consumer) {
         return this.getNewsWhichAreFavorite()
@@ -161,12 +162,8 @@ public class NewsRepository {
                     .subscribe();
     }
 
-    private Disposable rxRemoveOldest(int howMany) {
-        int dummy = 1; //сингл не работает если ничего не вернуть в onSuccess
-        return Single.create(e -> {
-            removeOldest(howMany);
-            e.onSuccess(dummy);
-        })
+    private Disposable rxDeleteAllExceptNewest(int howManyNewest) {
+        return Completable.fromAction(() -> deleteAllExceptNewest(howManyNewest))
                 .subscribeOn(Schedulers.io())
                 .subscribe();
     }

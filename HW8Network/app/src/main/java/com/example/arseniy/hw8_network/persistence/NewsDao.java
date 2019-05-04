@@ -52,7 +52,7 @@ interface NewsDao {
     void deleteAll();
 
     @Query("DELETE FROM news WHERE id NOT IN (SELECT id FROM news ORDER BY date DESC LIMIT :howMany)")
-    void deleteOldest(int howMany);
+    void deleteAllExceptNewest(int howMany);
 }
 
 
