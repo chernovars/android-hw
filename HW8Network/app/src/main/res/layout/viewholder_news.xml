@@ -12,21 +12,10 @@
     android:layout_margin="5dp"
     card_view:contentPadding="8dp">
 
-
-    <LinearLayout android:orientation="vertical"
+    <TextView
         android:layout_height="wrap_content"
-        android:layout_width="match_parent">
+        android:layout_width="match_parent"
+        android:textStyle="bold"
+        android:id="@+id/news_title" />
 
-        <TextView
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:textStyle="bold"
-            android:id="@+id/news_title" />
-
-        <TextView
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:id="@+id/news_short_desc"/>
-
-    </LinearLayout>
 </androidx.cardview.widget.CardView>

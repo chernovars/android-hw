@@ -5,13 +5,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.arseniy.hw8_network.persistence.News;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int DATESTR_VIEWHOLDER_TYPE = 100;
@@ -27,7 +27,6 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     void adaptNewsToDataset(List<News> newsArr) {
         //группировка по датам для датасета адаптера
-
         mDataset.clear();
         CharSequence lastDateStr = "";
         CharSequence curDateStr;
@@ -87,13 +86,11 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 News news = (News) mDataset.get(position);
                 NewsViewHolder newsViewHolder = (NewsViewHolder) holder;
                 newsViewHolder.mTitle.setText(news.title);
-                newsViewHolder.mShortDesc.setText(news.shortDesc);
                 newsViewHolder.itemView.setTag(news);
                 break;
             }
             default: throw new IllegalArgumentException("unknown viewType=" + viewType);
         }
-
     }
 
     @Override
@@ -106,12 +103,10 @@ public class NewsListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     class NewsViewHolder extends RecyclerView.ViewHolder {
         TextView mTitle;
-        TextView mShortDesc;
 
         NewsViewHolder(View itemView) {
             super(itemView);
             mTitle = itemView.findViewById(R.id.news_title);
-            mShortDesc = itemView.findViewById(R.id.news_short_desc);
         }
     }
 

@@ -2,6 +2,7 @@ package com.example.arseniy.hw8_network;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.LinkMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -14,11 +15,14 @@ import androidx.core.text.HtmlCompat;
 import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
-public class NewsActivity extends AppCompatActivity{
-    private TextView mNewsTitle;
-    private TextView mNewsDesc;
+public class NewsActivity extends AppCompatActivity {
+    private TextView mNewsContent;
     private TextView mNewsDate;
     private MenuItem mToggleFavorite;
     private boolean mIsFavorite;
@@ -30,7 +34,6 @@ public class NewsActivity extends AppCompatActivity{
     static final String NEWS_IS_FAVORITE_EXTRA = "news_is_favorite_extra";
 
     private int mNewsId;
-    private String mTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +42,21 @@ public class NewsActivity extends AppCompatActivity{
 
         setContentView(R.layout.activity_news);
 
-        mNewsTitle = findViewById(R.id.news_title);
-        mNewsDesc = findViewById(R.id.news_full_desc);
+        TextView mNewsTitle = findViewById(R.id.news_title);
+        mNewsContent = findViewById(R.id.news_content);
+        mNewsContent.setMovementMethod(LinkMovementMethod.getInstance());
         mNewsDate = findViewById(R.id.news_date);
 
         Intent startIntent = getIntent();
         if (startIntent != null) {
             mNewsId = startIntent.getIntExtra(NEWS_ID_EXTRA, 0);
-            mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
+            String mTitle = startIntent.getStringExtra(NEWS_TITLE_EXTRA);
             mNewsTitle.setText(mTitle);
 
-            mCompositeDisposable.add(NewsRepository.getInstance(this).rxGetNews(mNewsId, this::pullFullDesc));
+            mCompositeDisposable.add(NewsRepository.getInstance(this).get(mNewsId)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(this::pullFullDesc));
 
             if (savedInstanceState != null)
                 mIsFavorite = savedInstanceState.getBoolean(NEWS_IS_FAVORITE_EXTRA);
@@ -62,10 +69,13 @@ public class NewsActivity extends AppCompatActivity{
         mNewsDate.setText(Utils.customFormatDate(news.date));
         if (news.fullDesc.isEmpty() && Utils.isConnected(this))
             mCompositeDisposable.add(
-                    NewsRepository.getInstance(this).rxPullNewsText(mNewsId, text -> setTextAsHtml(mNewsDesc, text))
+                    NewsRepository.getInstance(this).rxPullNewsText(mNewsId)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(text -> setTextAsHtml(mNewsContent, text))
             );
         else
-            setTextAsHtml(mNewsDesc, news.fullDesc);
+            setTextAsHtml(mNewsContent, news.fullDesc);
     }
 
     private void setTextAsHtml(TextView view, String text) {
@@ -85,15 +95,37 @@ public class NewsActivity extends AppCompatActivity{
             mIsFavorite = !mIsFavorite;
             mToggleFavorite.setIcon(getDrawable(starIconsIDs[mIsFavorite ? 1 : 0]));
             mCompositeDisposable.add(
-                    NewsRepository.getInstance(activity).rxSetIsFavorite(mNewsId, mIsFavorite, activity::onAddFavoriteSuccess)
+                    rxSetIsFavorite(mNewsId, mIsFavorite, NewsRepository.getInstance(activity))
             );
 
             return true;
         });
 
-        mCompositeDisposable.add(NewsRepository.getInstance(this).rxPollIsFavorite(mNewsId, this::setIconOnIsFavoriteResult));
+        NewsRepository repo = NewsRepository.getInstance(this);
+
+        mCompositeDisposable.add(repo.isFavorite(mNewsId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::setIconOnIsFavoriteResult)
+        );
         return true;
     }
+
+    public Disposable rxSetIsFavorite(int newsId, boolean isNowFavorite, NewsRepository repository) {
+        if (isNowFavorite)
+            return Single.just(newsId)
+                    .doOnSuccess(repository::addFavorite)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess(value -> onAddFavoriteSuccess())
+                    .subscribe();
+        else
+            return Single.just(newsId)
+                    .doOnSuccess(repository::removeFavorite)
+                    .subscribeOn(Schedulers.io())
+                    .subscribe();
+    }
+
 
     public void onAddFavoriteSuccess() {
         Toast.makeText(this, R.string.toast_added_to_favorites, Toast.LENGTH_SHORT).show();

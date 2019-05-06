@@ -8,6 +8,8 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.example.arseniy.hw8_network.retrofit.MsDate;
 
+import org.reactivestreams.Publisher;
+
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,6 +17,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Random;
+
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class Utils {
     private static DateFormatSymbols myDateFormatSymbols = new DateFormatSymbols(){
@@ -85,6 +94,12 @@ public class Utils {
                 .setMessage(activity.getString(R.string.no_internet_warning_message))
                 .show();
     }
+
+    static Observable runInBackgroundObserveOnUi(Observable o) {
+        return o.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
 }
 
 

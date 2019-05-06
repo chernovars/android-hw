@@ -20,7 +20,9 @@ import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
 import java.util.List;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 interface OnNewsViewHolderClickListener {
     void onNewsItemClick(News news);
@@ -28,7 +30,6 @@ interface OnNewsViewHolderClickListener {
 
 public class NewsListFragment extends Fragment {
     private NewsListAdapter mAdapter;
-    private static NewsListAdapter mFavoritesAdapter; // тут статик, чтобы в любом фрагменте можно было обновить датасет адаптера избранных при выходе из NewsActivity
     private boolean isMain;
     private static final int NEWS_ACTIVITY_RETURN_KEY = 9788;
     private static RecyclerView mRecyclerView;
@@ -54,7 +55,12 @@ public class NewsListFragment extends Fragment {
 
         updateNewsList(mApplication, Utils.isConnected(mApplication));
 
-        if (mFavoritesAdapter == null && !isMain) mFavoritesAdapter = mAdapter;
+        if (!isMain) {
+            mCompositeDisposable.add(NewsRepository.getInstance(mApplication).getNewsWhichAreFavorite()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(mAdapter::adaptNewsToDataset));
+        }
 
     }
 
@@ -68,7 +74,7 @@ public class NewsListFragment extends Fragment {
         mSwipeRefresh.setOnRefreshListener(() -> {
             boolean isConnected = Utils.isConnected(mApplication);
             if (isConnected)
-                mCompositeDisposable.add(NewsRepository.getInstance(mApplication).rxPopulateDBFromAPI());
+                mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(mApplication)));
             else
                 Utils.showWarningDialog(getActivity());
             updateNewsList(mApplication, isConnected);
@@ -81,16 +87,19 @@ public class NewsListFragment extends Fragment {
         return view;
     }
 
+    private void updateNewsList(Context context, boolean isConnected) {
+        if (isMain)
+            mCompositeDisposable.add(NewsRepository.getInstance(context).rxGetAllNews(!isConnected)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(this::adaptAndDisableRefresh));
+        else
+            if (mSwipeRefresh != null) mSwipeRefresh.setRefreshing(false);
+    }
+
     private void adaptAndDisableRefresh(List<News> newsList) {
         mAdapter.adaptNewsToDataset(newsList);
         if (mSwipeRefresh != null) mSwipeRefresh.setRefreshing(false);
-    }
-
-    private void updateNewsList(Context context, boolean isConnected) {
-        if (isMain)
-            mCompositeDisposable.add(NewsRepository.getInstance(context).rxGetAllNews(this::adaptAndDisableRefresh, !isConnected));
-        else
-            mCompositeDisposable.add(NewsRepository.getInstance(context).rxGetFavorites(this::adaptAndDisableRefresh));
     }
 
     @Override
@@ -98,16 +107,6 @@ public class NewsListFragment extends Fragment {
         mRecyclerView.setAdapter(null); //из-за адаптера утекает ресайклер вью и далее mainActivity
         mCompositeDisposable.clear();
         super.onDestroyView();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //Метод нужен, чтобы обновлять адаптер избранных при закрытии активити новости (так как "избранность" могла в течение активити поменяться)
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == NEWS_ACTIVITY_RETURN_KEY) {
-            if (mFavoritesAdapter != null)
-                mCompositeDisposable.add(NewsRepository.getInstance(mApplication).rxGetFavorites(mFavoritesAdapter::adaptNewsToDataset));
-        }
     }
 
     private void onNewsItemClick(News news) {

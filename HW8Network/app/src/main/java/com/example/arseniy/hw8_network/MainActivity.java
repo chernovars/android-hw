@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
 
         Application application = getApplication();
         if (Utils.isConnected(application))
-            mCompositeDisposable.add(NewsRepository.getInstance(application).rxPopulateDBFromAPI());
+            mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(application)));
 
         TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), application);
         viewPager.setAdapter(tabPagerAdapter);

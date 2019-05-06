@@ -3,7 +3,7 @@
     <string name="favorites_tab">Избранное</string>
     <string name="recents_tab">Последние</string>
     <string name="news_title_default">Название новости</string>
-    <string name="news_full_desc_default">Полный текст новости</string>
+    <string name="news_content_default">Полный текст новости</string>
     <string name="toast_added_to_favorites">Новость добавлена в избранное</string>
     <string name="no_internet">Нет доступа к интернету</string>
     <string name="no_internet_warning_message">Будут показаны только ранее просмотренные новости.</string>

@@ -8,26 +8,21 @@ import com.example.arseniy.hw8_network.retrofit.NewsListPayload;
 import com.example.arseniy.hw8_network.retrofit.TinkoffApiResponse;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 public class NewsRepository {
     private NewsDao mNewsDao;
     private FavNewsDao mFavNewsDao;
     private static volatile NewsRepository instance;
-    private static int mTopNewsToPreserve = 3;
+    public final static int TOP_NEWS_TO_PRESERVE = 3;
 
     public static synchronized NewsRepository getInstance(Context context) {
         if (instance == null) {
             instance = new NewsRepository(context);
-            instance.rxDeleteAllExceptNewest(mTopNewsToPreserve);
         }
         return instance;
     }
@@ -38,7 +33,7 @@ public class NewsRepository {
         mFavNewsDao = db.getFavNewsDao();
     }
 
-    private void add(Iterable<News> items) {
+    public void add(Iterable<News> items) {
         mNewsDao.insert(items);
     }
 
@@ -46,11 +41,11 @@ public class NewsRepository {
         mNewsDao.updateText(id, text);
     }
 
-    private void deleteAllExceptNewest(int howMany) {
-        mNewsDao.deleteAllExceptNewest(howMany);
+    private void deleteAllExceptNewestAndFavorites(int howManyNewestToPreserve) {
+        mNewsDao.deleteAllExceptNewestAndFavorites(howManyNewestToPreserve);
     }
 
-    private Maybe<News> get(int id) {
+    public Maybe<News> get(int id) {
         return mNewsDao.getNewsById(id);
     }
 
@@ -58,25 +53,25 @@ public class NewsRepository {
         return mNewsDao.getAllNewsFreshFirst();
     }
 
-    private Single<List<News>> getNewsWhichAreFavorite() {
-        return mNewsDao.getNewsWhichAreFavorite();
+    public Flowable<List<News>> getNewsWhichAreFavorite() {
+        return mNewsDao.getNewsWhichAreFavoriteFlowable();
     }
 
-    private Single<Boolean> isFavorite(int id) {
+    public Single<Boolean> isFavorite(int id) {
         return mFavNewsDao.getFavNewsById(id).isEmpty().map(bool -> !bool);
     }
 
-    private void addFavorite(int id) {
+    public void addFavorite(int id) {
         FavNews fav = new FavNews();
         fav.id = id;
         mFavNewsDao.insert(fav);
     }
 
-    private void removeFavorite(int id) {
+    public void removeFavorite(int id) {
         mFavNewsDao.deleteById(id);
     }
 
-    private Single<List<News>> rxDownloadNewsListPayload() {
+    public Single<List<News>> rxDownloadNewsListPayload() {
         return Client.getInstance().getApi().getNewsListResponse()
                 .map(TinkoffApiResponse::getPayload)
                 .flattenAsObservable(list -> list)
@@ -84,7 +79,6 @@ public class NewsRepository {
                 .flattenAsObservable(list -> list)
                 .map(this::newsListPayloadToNews)
                 .toList();
-
     }
 
     private News newsListPayloadToNews(NewsListPayload newsListPayload) {
@@ -97,74 +91,21 @@ public class NewsRepository {
         return news;
     }
 
-    public Disposable rxPullNewsText(int id, Consumer<String> consumer) {
+    public Single<String> rxPullNewsText(int id) {
         return Client.getInstance().getApi().getNewsContentResponse(id)
                 .map(tinkoffApiResponse -> tinkoffApiResponse.getPayload().getContent())
-                .doOnSuccess(value -> updateText(id, value))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .doOnSuccess(value -> updateText(id, value));
     }
 
-    public Disposable rxGetNews(int id, Consumer<News> consumer) {
-        return this.get(id)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
-    }
-
-    public Disposable rxGetAllNews(Consumer<List<News>> consumer, boolean filterEmpty) {
+    public Flowable<List> rxGetAllNews(boolean filterEmpty) {
         return this.getAll()
                 .flatMap(list -> filterEmpty ?
                         Flowable.fromIterable(list).filter(news -> !news.fullDesc.isEmpty()).toList().toFlowable() :
                         Flowable.just(list))
-                .cast(List.class)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
+                .cast(List.class);
     }
 
-
-    public Disposable rxGetFavorites(Consumer<List<News>> consumer) {
-        return this.getNewsWhichAreFavorite()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumer::accept);
-    }
-
-    public Disposable rxPopulateDBFromAPI() {
-        //this.removeAll();
-        return this.rxDownloadNewsListPayload()
-                .observeOn(Schedulers.io())
-                .subscribe(this::add);
-    }
-
-    public Disposable rxPollIsFavorite(int newsId, Consumer<Boolean> consumeIsFavorite) {
-        return this.isFavorite(newsId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(consumeIsFavorite::accept);
-    }
-
-
-    public Disposable rxSetIsFavorite(int newsId, boolean isNowFavorite, Runnable ifFavoriteResult) {
-        if (isNowFavorite)
-            return Single.just(newsId)
-                    .doOnSuccess(this::addFavorite)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess(value -> ifFavoriteResult.run())
-                    .subscribe();
-        else
-            return Single.just(newsId)
-                    .doOnSuccess(this::removeFavorite)
-                    .subscribeOn(Schedulers.io())
-                    .subscribe();
-    }
-
-    private Disposable rxDeleteAllExceptNewest(int howManyNewest) {
-        return Completable.fromAction(() -> deleteAllExceptNewest(howManyNewest))
-                .subscribeOn(Schedulers.io())
-                .subscribe();
+    public Completable rxDeleteAllExceptNewestAndFavorites(int howManyNewest) {
+        return Completable.fromAction(() -> deleteAllExceptNewestAndFavorites(howManyNewest));
     }
 }
