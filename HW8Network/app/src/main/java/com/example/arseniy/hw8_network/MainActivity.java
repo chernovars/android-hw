@@ -1,9 +1,9 @@
 package com.example.arseniy.hw8_network;
 
+import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
-import android.app.Application;
-import android.os.Bundle;
 
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 import com.google.android.material.tabs.TabLayout;
@@ -15,7 +15,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         if(!Utils.isConnected(this))
             Utils.showWarningDialog(this);
 
@@ -24,11 +23,10 @@ public class MainActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(viewPager);
 
-        Application application = getApplication();
-        if (Utils.isConnected(application))
-            mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(application)));
+        if (Utils.isConnected(this))
+            mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(this)));
 
-        TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), application);
+        TabPagerAdapter tabPagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), this);
         viewPager.setAdapter(tabPagerAdapter);
     }
 

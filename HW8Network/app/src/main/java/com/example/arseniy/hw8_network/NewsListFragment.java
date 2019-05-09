@@ -1,10 +1,8 @@
 package com.example.arseniy.hw8_network;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +17,7 @@ import com.example.arseniy.hw8_network.persistence.News;
 import com.example.arseniy.hw8_network.persistence.NewsRepository;
 
 import java.util.List;
+import java.util.Objects;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -31,37 +30,28 @@ interface OnNewsViewHolderClickListener {
 public class NewsListFragment extends Fragment {
     private NewsListAdapter mAdapter;
     private boolean isMain;
-    private static final int NEWS_ACTIVITY_RETURN_KEY = 9788;
-    private static RecyclerView mRecyclerView;
+    private static final String IS_MAIN_EXTRA = "is_main_extra";
     private SwipeRefreshLayout mSwipeRefresh;
     private CompositeDisposable mCompositeDisposable = new CompositeDisposable();
-    private Application mApplication; // использую это, так как не могу полагаться на Context в onAttach
+    private Context mContext;
 
-    static NewsListFragment newInstance(boolean isMain, Application application) {
+    static NewsListFragment newInstance(boolean isMain) {
         Bundle args = new Bundle();
         NewsListFragment fragment = new NewsListFragment();
+        args.putBoolean(IS_MAIN_EXTRA, isMain);
         fragment.setArguments(args);
-        fragment.isMain = isMain;
         fragment.setRetainInstance(true);
-        fragment.mApplication = application;
         return fragment;
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
-        super.onAttach(mApplication);
-
+        super.onAttach(context);
+        mContext = context;
         mAdapter = new NewsListAdapter(this::onNewsItemClick);
-
-        updateNewsList(mApplication, Utils.isConnected(mApplication));
-
-        if (!isMain) {
-            mCompositeDisposable.add(NewsRepository.getInstance(mApplication).getNewsWhichAreFavorite()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(mAdapter::adaptNewsToDataset));
-        }
-
+        Bundle args = getArguments();
+        isMain = Objects.requireNonNull(args).getBoolean(IS_MAIN_EXTRA);
+        updateNewsList(mContext, Utils.isConnected(mContext));
     }
 
     @Override
@@ -72,29 +62,33 @@ public class NewsListFragment extends Fragment {
         mSwipeRefresh = view.findViewById(R.id.swiperefresh);
 
         mSwipeRefresh.setOnRefreshListener(() -> {
-            boolean isConnected = Utils.isConnected(mApplication);
+            boolean isConnected = Utils.isConnected(mContext);
             if (isConnected)
-                mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(mApplication)));
+                mCompositeDisposable.add(NewsApp.rxPopulateDBFromAPI(NewsRepository.getInstance(mContext)));
             else
                 Utils.showWarningDialog(getActivity());
-            updateNewsList(mApplication, isConnected);
-            Log.d("FRAGMENT_NEWS", "ANIMATION SHOULD END HERE");
+            updateNewsList(mContext, isConnected);
         });
-        mRecyclerView = view.findViewById(R.id.news_list_recyclerview);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        mRecyclerView.setAdapter(mAdapter);
+        RecyclerView recyclerView = view.findViewById(R.id.news_list_recyclerview);
+        recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
+        recyclerView.setAdapter(mAdapter);
 
         return view;
     }
 
     private void updateNewsList(Context context, boolean isConnected) {
-        if (isMain)
+        if (isMain) {
             mCompositeDisposable.add(NewsRepository.getInstance(context).rxGetAllNews(!isConnected)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(this::adaptAndDisableRefresh));
-        else
-            if (mSwipeRefresh != null) mSwipeRefresh.setRefreshing(false);
+        }
+        else {
+            mCompositeDisposable.add(NewsRepository.getInstance(context).getNewsWhichAreFavorite()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(this::adaptAndDisableRefresh));
+        }
     }
 
     private void adaptAndDisableRefresh(List<News> newsList) {
@@ -104,15 +98,14 @@ public class NewsListFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
-        mRecyclerView.setAdapter(null); //из-за адаптера утекает ресайклер вью и далее mainActivity
         mCompositeDisposable.clear();
         super.onDestroyView();
     }
 
     private void onNewsItemClick(News news) {
-        Intent intent = new Intent(mApplication, NewsActivity.class);
+        Intent intent = new Intent(mContext, NewsActivity.class);
         intent.putExtra(NewsActivity.NEWS_TITLE_EXTRA, news.title);
         intent.putExtra(NewsActivity.NEWS_ID_EXTRA, news.id);
-        this.startActivityForResult(intent, NewsListFragment.NEWS_ACTIVITY_RETURN_KEY);
+        this.startActivity(intent);
     }
 }

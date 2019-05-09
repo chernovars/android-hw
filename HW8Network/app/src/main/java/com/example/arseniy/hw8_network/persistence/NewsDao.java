@@ -37,11 +37,12 @@ interface NewsDao {
 
     //без дополнительных "SELECT *" подчеркивалась ошибка в коде на UNION
     @Query("DELETE FROM news WHERE id NOT IN (" +
-            "SELECT * FROM " +
-                "(SELECT id FROM news ORDER BY date DESC LIMIT :howManyNewestToPreserve) " +
-            "UNION " +
-            "SELECT id FROM " +
-                "(SELECT * FROM news, favnews WHERE news.id=favnews.id))")
+                "SELECT * FROM " +
+                    "(SELECT id FROM news WHERE fullDesc != \"\" ORDER BY date DESC LIMIT :howManyNewestToPreserve ) " +
+                "UNION " +
+                "SELECT id FROM " +
+                    "(SELECT * FROM news, favnews WHERE news.id=favnews.id)" +
+            ")")
     void deleteAllExceptNewestAndFavorites(int howManyNewestToPreserve);
 }
 

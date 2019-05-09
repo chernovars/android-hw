@@ -26,7 +26,7 @@ public class NewsApp extends Application {
     public static Disposable rxPopulateDBFromAPI(NewsRepository repository) {
         //this.removeAll();
         return repository.rxDownloadNewsListPayload()
-                .observeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io())
                 .subscribe(repository::add);
     }
 }
